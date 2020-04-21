@@ -1,6 +1,12 @@
-version: 2
+version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@x.y
 workflows: # Define a Workflow running the build job, then the deploy job
   version: 2
+  aws-cli:
+    jobs:
+      - aws-cli-example
+          # context: aws
   build-deploy:
     jobs:
       - build
@@ -11,6 +17,14 @@ workflows: # Define a Workflow running the build job, then the deploy job
             branches:
               only: master
 jobs:
+  aws-cli-example:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: default
+      - run: echo "$(aws s3 ls)"
+
   build:
     docker:
       - image: circleci/python:3.6
@@ -22,6 +36,6 @@ jobs:
         - run: # Install the AWS CLI if it is not already included in the docker image
             name: Install awscli 
             command: sudo pip install awscli
-        - run: # Deploy to S3 using the sync command
+        - run: # Deploy to S3 using the sync commansd
             name: Deploy to S3
             command: aws s3 sync . s3://aws-cloudformation-templates-cf
