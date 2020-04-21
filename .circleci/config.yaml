@@ -1,11 +1,27 @@
 version: 2
+workflows: # Define a Workflow running the build job, then the deploy job
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
 jobs:
   build:
     docker:
       - image: circleci/python:3.6
-    steps:
-      - checkout
-      - run:
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
+  
+  deploy:
+     docker: # Specify executor for running deploy job
+       - image: circleci/python:3.6 # Specify docker image to use
+     steps:
+        - run: # Install the AWS CLI if it is not already included in the docker image
+            name: Install awscli 
+            command: sudo pip install awscli
+        - run: # Deploy to S3 using the sync command
+            name: Deploy to S3
+            command: aws s3 sync . s3://aws-cloudformation-templates-cf
