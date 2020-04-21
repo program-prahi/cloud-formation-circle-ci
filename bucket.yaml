@@ -1,0 +1,91 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3 Bucket 
+Parameters: 
+  BUCKETNAME:
+    Type: String
+    Default: put-bucket-name-here
+    Description: enter a unique bucket name.  S3 bucket names must be unique accross all of AWS.
+  KMSARN:
+    Type: String
+    Description: ARN to the KMS key to encrypt the uploaded files
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: "Naming conventions for the company"
+    Type: String  
+  OWNER:
+    Type: String
+    Description: enter the 'owner' tag value
+    Default: Jacob Puthuparambil
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+  USELIFECYCLE: 
+    Type: String
+    Default: 'yes'
+    AllowedValues: 
+    - 'yes'
+    - 'no'
+    Description: "Assign default lifecycle: 60 days -> OneZone IA, 180 days -> Glacier, 365 days -> deeps archive"
+Conditions:
+  NeedToUseLifeCycleRules: !Equals [!Ref USELIFECYCLE, 'yes']    
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: 
+                Ref: KMSARN
+      BucketName: 
+        Ref: BUCKETNAME
+      LifecycleConfiguration: 
+        Rules: !If 
+          - NeedToUseLifeCycleRules
+          - - Id: "Remove Incomplete Multipart Uploads"
+              AbortIncompleteMultipartUpload: 
+                DaysAfterInitiation: 7
+              Status: Enabled
+            - Transitions: 
+              - StorageClass: ONEZONE_IA
+                TransitionInDays: 60
+              - StorageClass: GLACIER
+                TransitionInDays: 180
+              Status: Enabled
+          - - Id: "Remove Incomplete Multipart Uploads"
+              AbortIncompleteMultipartUpload: 
+                DaysAfterInitiation: 7
+              Status: Enabled
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT
+      VersioningConfiguration:
+        Status: Enabled
+Outputs: 
+  S3BucketARN: 
+    Description: 'S3Bucket ARN.'
+    Value: !GetAtt 'S3Bucket.Arn'
+  S3BucketName: 
+    Description: 'S3 Bucket Name'
+    Value: !Ref BUCKETNAME
