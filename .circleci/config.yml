@@ -5,7 +5,10 @@ workflows: # Define a Workflow running the build job, then the deploy job
   version: 2
   aws-cli:
     jobs:
-      - aws-cli-example
+      - aws-cli-example:
+          filters:
+            branches:
+              only: development
           # context: aws
   # build-deploy:
   #   jobs:
