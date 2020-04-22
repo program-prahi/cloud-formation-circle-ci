@@ -24,7 +24,7 @@ jobs:
             echo "Incoming Commit from Branch : ${CIRCLE_BRANCH}"
             aws s3 sync . s3://${SYNC_BUCKET_NAME} --exclude ".gitignore" --exclude ".git/*" --exclude ".circleci/*"
             echo "Template files pushed to git repo"
-            aws create-stack --stack-name test-circleci-stack --template-url https://${SYNC_BUCKET_NAME}.s3.amazonaws.com/bucket.yaml
+            aws cloudformation create-stack --stack-name test-circleci-stack --template-url https://${SYNC_BUCKET_NAME}.s3.amazonaws.com/bucket.yaml --parameters https://${SYNC_BUCKET_NAME}.s3.amazonaws.com/parameters.json
   # build:
   #   docker:
   #     - image: circleci/python:3.6
