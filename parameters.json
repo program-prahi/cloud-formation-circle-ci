@@ -1,0 +1,30 @@
+[
+    {
+      "ParameterKey": "BUCKETNAME",
+      "ParameterValue": "test-fluent-1234345-circle-ci-bucket",
+    }
+    {
+        "ParameterKey": "KMSARN",
+        "ParameterValue": "string",
+    }
+    {
+        "ParameterKey": "COMPANYNAME",
+        "ParameterValue": "fluent",
+    }
+    {
+        "ParameterKey": "OWNER",
+        "ParameterValue": "harry potter",
+    }
+    {
+        "ParameterKey": "ENVIRONMENT",
+        "ParameterValue": "dev",
+    }
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "datalake",
+    }
+    {
+        "ParameterKey": "USELIFECYCLE",
+        "ParameterValue": "yes",
+    }
+]
