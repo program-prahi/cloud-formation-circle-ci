@@ -42,6 +42,7 @@ Parameters:
     Type: String
   DBPassword:
     Type: String
+    NoEcho: true
 Conditions:
   NeedToUseLifeCycleRules: !Equals [!Ref USELIFECYCLE, 'yes']    
 Resources:
