@@ -108,4 +108,4 @@ if __name__ == '__main__':
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
-    list_stacks()    
+    # list_stacks()    
