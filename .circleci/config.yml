@@ -26,7 +26,7 @@ jobs:
             echo "Template files pushed to git repo"
             aws s3api get-object --bucket ${SYNC_BUCKET_NAME} --key parameters.json parameters.json
             pip install -r requirements.txt
-            python getsecrets.py
+            python deploy_stacks.py
   # build:
   #   docker:
   #     - image: circleci/python:3.6
