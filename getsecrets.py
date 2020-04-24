@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 from ast import literal_eval
 import json
 import os
+import time
 
 
 def get_secret():
@@ -65,6 +66,18 @@ def list_stacks():
         create_stack()
 
 
+def describe_stacks():
+    errors = ['CREATE_FAILED','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE']
+    cf_client = boto3.client('cloudformation')
+    response = cf_client.describe_stacks(StackName='test-circleci-stack')
+    time.sleep(10)
+    if response['Stacks'][0]['StackStatus'] == 'CREATE_IN_PROGRESS':
+        describe_stacks()
+    elif response['Stacks'][0]['StackStatus'] == 'CREATE_COMPLETE':
+        exit(0)
+    elif response['Stacks'][0]['StackStatus'] in errors:
+        exit(254) 
+
 def update_stack():
     print("update_stack")
     cf_client = boto3.client('cloudformation')
@@ -80,7 +93,7 @@ def update_stack():
     except ClientError as e:
         print(e.response['Error']['Message'])
         exit(254)
-        
+    describe_stacks()
 
 
 def create_stack():
@@ -98,6 +111,7 @@ def create_stack():
         print(e.response['Error']['Message'])
         exit(254)        
     print("create_stack")
+    describe_stacks()
 
 if __name__ == '__main__':
     secret_value = get_secret()
@@ -113,4 +127,4 @@ if __name__ == '__main__':
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
-    # list_stacks()    
+    list_stacks()    
