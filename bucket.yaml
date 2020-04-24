@@ -49,7 +49,6 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties: 
-      VPC: jdsfjsh
       AccessControl: Private
       BucketEncryption: 
         ServerSideEncryptionConfiguration:
