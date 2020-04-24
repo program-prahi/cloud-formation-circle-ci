@@ -49,27 +49,63 @@ def get_secret():
         if 'SecretString' in get_secret_value_response:
             secret = get_secret_value_response['SecretString']
         else:
-            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-            
+            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])         
     return secret
 
-if __name__ == '__main__':
-    secret_value=get_secret()
-    secret_value = literal_eval(secret_value)
-    
+
+def list_stacks():
+    stack_names = list()
+    cf_client = boto3.client('cloudformation')
+    response = cf_client.list_stacks(StackStatusFilter=['CREATE_COMPLETE','UPDATE_COMPLETE'])
+    for i in response['StackSummaries']:
+        stack_names.append(i['StackName'])
+    if "test-circleci-stack" in stack_names:
+        update_stack()
+    else:
+        create_stack()
+
+
+def update_stack():
+    print("update_stack")
+    cf_client = boto3.client('cloudformation')
+    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/bucket.yaml"
     parameters = open("parameters.json",'r')
     parameters_json = json.load(parameters)
     parameters.close()
-    
-    for i in range(0,len(parameters_json)):
+    try:
+        response = cf_client.update_stack(
+            StackName='test-circleci-stack',
+            TemplateURL=templateurl,
+            Parameters=parameters_json)
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+        
+
+
+def create_stack():
+    cf_client = boto3.client('cloudformation')
+    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/bucket.yaml"
+    parameters = open("parameters.json",'r')
+    parameters_json = json.load(parameters)
+    parameters.close()
+    response = cf_client.create_stack(
+        StackName='test-circleci-stack',
+        TemplateURL=templateurl,
+        Parameters=parameters_json)
+    print("create_stack")
+
+if __name__ == '__main__':
+    secret_value = get_secret()
+    secret_value = literal_eval(secret_value)
+    parameters = open("parameters.json", 'r')
+    parameters_json = json.load(parameters)
+    parameters.close()
+    for i in range(0, len(parameters_json)):
         if parameters_json[i]["ParameterKey"] == "DBName":
             parameters_json[i]["ParameterValue"] = secret_value["DBName"]
-            
-
         if parameters_json[i]["ParameterKey"] == "DBPassword":
             parameters_json[i]["ParameterValue"] = secret_value["Password"]
-            
-    
-    parameters = open("parameters.json",'w')
-    json.dump(parameters_json,parameters)
+    parameters = open("parameters.json", 'w')
+    json.dump(parameters_json, parameters)
     parameters.close()
+    list_stacks()    
