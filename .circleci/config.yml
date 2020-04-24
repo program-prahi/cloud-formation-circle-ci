@@ -27,7 +27,7 @@ jobs:
             aws s3api get-object --bucket ${SYNC_BUCKET_NAME} --key parameters.json parameters.json
             pip install -r requirements.txt
             python getsecrets.py
-            aws cloudformation create-stack --stack-name test-circleci-stack --template-url https://${SYNC_BUCKET_NAME}.s3.amazonaws.com/bucket.yaml --parameters file://parameters.json
+
   # build:
   #   docker:
   #     - image: circleci/python:3.6

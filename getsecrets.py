@@ -79,6 +79,7 @@ def update_stack():
             Parameters=parameters_json)
     except ClientError as e:
         print(e.response['Error']['Message'])
+        exit(254)
         
 
 
@@ -88,10 +89,14 @@ def create_stack():
     parameters = open("parameters.json",'r')
     parameters_json = json.load(parameters)
     parameters.close()
-    response = cf_client.create_stack(
-        StackName='test-circleci-stack',
-        TemplateURL=templateurl,
-        Parameters=parameters_json)
+    try:
+        response = cf_client.create_stack(
+            StackName='test-circleci-stack',
+            TemplateURL=templateurl,
+            Parameters=parameters_json)
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+        exit(254)        
     print("create_stack")
 
 if __name__ == '__main__':
@@ -108,4 +113,4 @@ if __name__ == '__main__':
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
-    # list_stacks()    
+    list_stacks()    
