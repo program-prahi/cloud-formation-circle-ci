@@ -9,7 +9,7 @@ workflows: # Define a Workflow running the build job, then the deploy job
           filters:
             branches:
               only: master
-          # context: aws
+          
           
 jobs:
   create-stack:
@@ -19,7 +19,7 @@ jobs:
       - aws-cli/setup:
           profile-name: default
       - run: 
-          name: Sync to s3
+          name: syncing files to s3 and deploying the CFT's 
           command: |
             echo "Incoming Commit from Branch : ${CIRCLE_BRANCH}"
             aws s3 sync . s3://${SYNC_BUCKET_NAME} --exclude ".gitignore" --exclude ".git/*" --exclude ".circleci/*"
@@ -27,14 +27,3 @@ jobs:
             aws s3api get-object --bucket ${SYNC_BUCKET_NAME} --key parameters.json parameters.json
             pip install -r requirements.txt
             python deploy_stacks.py
-  # build:
-  #   docker:
-  #     - image: circleci/python:3.6
-  
-  # deploy:
-  #    docker: # Specify executor for running deploy job
-  #      - image: circleci/python:3.6 # Specify docker image to use
-  #    steps:
-  #       - run: # Deploy to S3 using the sync commansd
-  #           name: Deploy to S3
-  #           command: aws s3 sync . s3://aws-cloudformation-templates-cf
