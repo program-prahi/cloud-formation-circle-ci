@@ -132,7 +132,9 @@ if __name__ == '__main__':
             parameters_json[i]["ParameterValue"] = secret_value["Username"]
         if parameters_json[i]["ParameterKey"] == "Host":
             parameters_json[i]["ParameterValue"] = secret_value["Host"]
+        if parameters_json[i]["ParameterKey"] == "CodaS3BucketName":
+            parameters_json[i]["ParameterValue"] = os.environ["SYNC_BUCKET_NAME"]
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
-    list_stacks()    
+    list_stacks()   
