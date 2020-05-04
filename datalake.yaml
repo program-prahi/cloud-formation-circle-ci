@@ -1,0 +1,621 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DataLake Creation
+Parameters:
+      ENVIRONMENT: 
+        Type: String    
+        AllowedValues:
+        - dev
+        - qa
+        - staging
+        - production
+      COMPANYNAME: 
+        AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+        ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+          It cannot start or end with a hyphen (-).
+        Default: fluent
+        Description: "Naming conventions for the company"
+        Type: String   
+      CodaS3BucketName:
+        Default: test-fluent-datalake
+        Description: "S3 bucket where the Quick Start templates and scripts are installed.\
+          \ Use this parameter to specify the S3 bucket name you\u2019ve created for your\
+          \ copy of Quick Start assets, if you decide to customize or extend the Quick\
+          \ Start for your own use. The bucket name can include numbers, lowercase letters,\
+          \ uppercase letters, and hyphens, but should not start or end with a hyphen."
+        Type: String
+      CodaS3KeyPrefix:
+        Default: datalake/
+        Description: S3 key prefix used to simulate a folder for your copy of Quick Start
+          assets, if you decide to customize or extend the Quick Start for your own use.
+          This prefix can include numbers, lowercase letters, uppercase letters, hyphens,
+          and forward slashes.
+        Type: String
+      OWNER: 
+        Type: String
+        Default: 'Jacob Puthuparambil'
+        Description: "The labeled owner for tagging purposes"
+      ProjectName:
+        Type: String
+        Description: Name of the project
+        Default: datalake
+      VpcCIDR:
+        Description: Please enter the IP range (CIDR notation) for this VPC
+        Type: String
+        Default: 10.192.0.0/16
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+  
+      PublicSubnet1CIDR:
+        Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+        Type: String
+        Default: 10.192.50.0/24
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+      PublicSubnet2CIDR:
+        Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+        Type: String
+        Default: 10.192.40.0/24
+        AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+      ReplicationInstanceClass:
+        Type: String
+        Description: Instance type of Replication Instance.
+        AllowedValues:
+            - dms.t2.micro
+            - dms.t2.small
+            - dms.t2.medium
+            - dms.t2.large
+            - dms.c4.large
+            - dms.c4.xlarge
+            - dms.c4.2xlarge
+            - dms.c4.4xlarge
+        Default: dms.c4.4xlarge
+      EndpointBucketFolder:
+        Type: String
+        Description: Prefix of raw bucket where the full load data populated
+        Default: fig_full_load
+      Username:
+        Type: String
+        Description: Username of the Database
+        Default: awsdatalake
+      Password:
+          Type: String
+          NoEcho: true
+          Description: Password of the Database
+      Engine:
+          Type: String
+          Description: Engine type of the Database
+          Default: mysql
+      Host:
+          Type: String
+          Description: Host IP of the Database
+          Default: 34.74.194.212
+      Port:
+          Type: String
+          Description: Port number of the Database
+          Default: 3306
+      DBName: 
+          Type: String
+          Description: Name of the Database
+          Default: FILU
+      CDCScriptPath:
+          Type: String
+          Description: Script path of the CDC Glue Job.
+      ScriptPath: 
+          Type: String
+          Description: The S3 location of the plain etl glue Job script Path
+      RawInputDatabaseName: 
+          Type: String
+          Description: The database name for the input of the job
+          Default: fluent_dev_filu_db_raw_test
+      TransientInputDatabaseName: 
+          Type: String
+          Description: The database name for the input of the job
+          Default: fluent_dev_filu_db_transient_test
+Resources:
+    KmsKey: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                ProjectName: !Ref 'ProjectName'
+                OWNER: !Ref 'OWNER'
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}kms.yaml'
+        Type: AWS::CloudFormation::Stack
+    BucketsRaw:
+        Properties:
+            Parameters:
+                BUCKETNAME: !Sub '${COMPANYNAME}-${ProjectName}-raw-${ENVIRONMENT}-${AWS::AccountId}'
+                ENVIRONMENT: !Sub '${ENVIRONMENT}'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref 'ProjectName'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                USELIFECYCLE: 'yes'
+                Versioning: Enabled
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}bucket.yaml'
+        Type: AWS::CloudFormation::Stack
+    AthenaQueryResultsBucket:
+      Properties:
+          Parameters:
+              BUCKETNAME: !Sub '${COMPANYNAME}-${ProjectName}-athena-query-results-${ENVIRONMENT}-${AWS::AccountId}'
+              ENVIRONMENT: !Sub '${ENVIRONMENT}'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref 'ProjectName'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              USELIFECYCLE: 'yes'
+              Versioning: Suspended    
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}bucket.yaml'
+      Type: AWS::CloudFormation::Stack
+    TransientBucket:
+      Properties:
+          Parameters:
+              BUCKETNAME: !Sub '${COMPANYNAME}-${ProjectName}-transient-${ENVIRONMENT}-${AWS::AccountId}'
+              ENVIRONMENT: !Sub '${ENVIRONMENT}'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref 'ProjectName'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              USELIFECYCLE: 'yes'
+              Versioning: Suspended
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}bucket.yaml'
+      Type: AWS::CloudFormation::Stack
+    TemporaryBucket:
+      Properties:
+          Parameters:
+              BUCKETNAME: !Sub '${COMPANYNAME}-${ProjectName}-glue-temporary-${ENVIRONMENT}-${AWS::AccountId}'
+              ENVIRONMENT: !Sub '${ENVIRONMENT}'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref 'ProjectName'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              USELIFECYCLE: 'yes'
+              Versioning: Suspended
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}bucket.yaml'
+      Type: AWS::CloudFormation::Stack
+    KinesisStream:
+      Properties:
+        Parameters:
+          ENVIRONMENT: !Sub '${ENVIRONMENT}'
+          OWNER: !Ref 'OWNER'
+          ProjectName: !Ref 'ProjectName'
+          COMPANYNAME: !Ref 'COMPANYNAME'
+          KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+          KinesisDataStreamName: !Sub '${ProjectName}-raw-${ENVIRONMENT}-${AWS::AccountId}-Stream'
+        TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}kinesis-datastream.yaml'
+      Type: AWS::CloudFormation::Stack
+
+    KinesisFirehose:
+      Properties:
+        Parameters:
+          ENVIRONMENT: !Sub '${ENVIRONMENT}'
+          OWNER: !Ref 'OWNER'
+          ProjectName: !Ref 'ProjectName'
+          COMPANYNAME: !Ref 'COMPANYNAME'
+          DeliveryStreamName: !Sub '${ProjectName}-${ENVIRONMENT}-${AWS::AccountId}-DeliveryStream'
+          KinesisStreamARN: !GetAtt 'KinesisStream.Outputs.DataStreamARN'
+          RawZoneBucketName: !GetAtt 'BucketsRaw.Outputs.S3BucketName'
+          KmsKeyArn: !GetAtt 'KmsKey.Outputs.KeyArn'
+        TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}kinesis-firehose.yaml'
+      Type: AWS::CloudFormation::Stack
+    VpcTemplate:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          CompanyName: !Ref COMPANYNAME
+          Owner: !Ref OWNER
+          Environment: !Ref ENVIRONMENT
+          ProjectName: !Ref ProjectName
+          VpcCIDR: !Ref VpcCIDR
+          PublicSubnet1CIDR: !Ref PublicSubnet1CIDR
+          PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
+        TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.${AWS::Region}.amazonaws.com/${CodaS3KeyPrefix}vpc.yaml'
+    ReplicationInstance:
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              ProjectName: !Ref 'ProjectName'
+              OWNER: !Ref 'OWNER'
+              PublicSubnet1Id: !GetAtt 'VpcTemplate.Outputs.PublicSubnet1'
+              PublicSubnet2Id: !GetAtt 'VpcTemplate.Outputs.PublicSubnet2'
+              ReplicationInstanceClass: !Ref ReplicationInstanceClass
+              KmsKeyId: !GetAtt 'KmsKey.Outputs.KeyId'
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}dmsreplicationinstance.yaml'
+      Type: AWS::CloudFormation::Stack
+    DBSecret: 
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              ProjectName: !Ref 'ProjectName'
+              OWNER: !Ref 'OWNER'
+              Username: !Ref Username
+              Password: !Ref Password
+              Host: !Ref Host
+              Port: !Ref Port
+              Engine: !Ref Engine
+              DBName: !Ref DBName
+              KmsKeyId: !GetAtt 'KmsKey.Outputs.KeyId'
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}secret.yaml'
+      Type: AWS::CloudFormation::Stack  
+    DMSEndpoint:
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              ProjectName: !Ref 'ProjectName'
+              OWNER: !Ref 'OWNER'
+              KMSId: !GetAtt 'KmsKey.Outputs.KeyId'
+              DMSEndpointName: !Sub '${ProjectName}-${ENVIRONMENT}'
+              KinesisStreamArn: !GetAtt 'KinesisStream.Outputs.DataStreamARN'
+              RawBucketName: !GetAtt 'BucketsRaw.Outputs.S3BucketName'
+              BucketFolder: !Ref EndpointBucketFolder
+              SourceDBSecretArn: !GetAtt 'DBSecret.Outputs.DBSecretArn'
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}dms-endpoint.yaml'
+      Type: AWS::CloudFormation::Stack
+    DMSTasks:
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              ProjectName: !Ref 'ProjectName'
+              OWNER: !Ref 'OWNER'
+              ReplicationInstanceArn: !GetAtt ReplicationInstance.Outputs.ReplicationInstanceARN
+              DMSTaskName: !Sub '${ProjectName}-${ENVIRONMENT}'
+              DMSKinesisSourceEndpointArn: !GetAtt DMSEndpoint.Outputs.SourceEndpointArn
+              DMSKinesisTargetEndpointArn: !GetAtt DMSEndpoint.Outputs.DMSKinesisEndpointArn
+              DMSS3SourceEndpointArn: !GetAtt DMSEndpoint.Outputs.SourceEndpointArn
+              DMSS3TargetEndpointArn: !GetAtt DMSEndpoint.Outputs.DMSS3EndpointArn
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}dms-tasks.yaml'
+      Type: AWS::CloudFormation::Stack
+    GlueRole: 
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              TransientBucketARN: !GetAtt 'TransientBucket.Outputs.S3BucketARN'
+              RawBucketARN: !GetAtt 'BucketsRaw.Outputs.S3BucketARN'
+              KmsKeyArn: !GetAtt 'KmsKey.Outputs.KeyArn'
+              GlueTempBucketARN: !GetAtt 'TemporaryBucket.Outputs.S3BucketARN'
+              GlueScriptsBucketARN: !Sub 'arn:aws:s3:::${CodaS3BucketName}'
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}iam.yaml'
+      Type: AWS::CloudFormation::Stack
+    RawS3Crawler:
+      Properties:
+          Parameters:
+              CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-raw-Crawler'
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref ProjectName
+              DATABASENAME: !Ref RawInputDatabaseName
+              SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueRawCrawlerRoleARN'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              TypeOfConnectionToCrawl: s3
+              S3ConnectionInformation: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'BucketsRaw.Outputs.S3BucketName'
+                  - '/'
+                  - !Ref EndpointBucketFolder
+                  - '/'
+              TypeofData: raw
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
+      Type: AWS::CloudFormation::Stack
+    TransientS3Crawler:
+      Properties:
+          Parameters:
+              CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-transient-Crawler'
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref ProjectName
+              DATABASENAME: !Ref TransientInputDatabaseName
+              SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueTransientCrawlerRoleArn'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              TypeOfConnectionToCrawl: s3
+              S3ConnectionInformation: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                  - '/'
+                  - !Ref EndpointBucketFolder
+                  - '/'
+              TypeofData: transient
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
+      Type: AWS::CloudFormation::Stack
+    CDCCrawler:
+      Properties:
+          Parameters:
+              CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-cdc-Crawler'
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref ProjectName
+              SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueRawCrawlerRoleARN'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              TypeOfConnectionToCrawl: cdc
+              CDCDatabaseName: !GetAtt 'KinesisFirehose.Outputs.DBName'
+              CDCTableName: !GetAtt 'KinesisFirehose.Outputs.TableName'
+              TypeofData: cdc
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
+      Type: AWS::CloudFormation::Stack
+    CDCGlueJob: 
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref ProjectName
+              NAME: !Sub '${ProjectName}-${ENVIRONMENT}-cdc-job'
+              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              ScriptPath: !Ref CDCScriptPath
+              TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+              InputDatabase: !GetAtt 'KinesisFirehose.Outputs.DBName'
+              InputTable: !GetAtt 'KinesisFirehose.Outputs.TableName'
+              OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+              OutputPath: FILU
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+      Type: AWS::CloudFormation::Stack
+    tdemographicsurveyGlueJob: 
+      Properties: 
+          Parameters: 
+              ENVIRONMENT: !Ref 'ENVIRONMENT'
+              COMPANYNAME: !Ref 'COMPANYNAME'
+              OWNER: !Ref 'OWNER'
+              ProjectName: !Ref ProjectName
+              NAME: t_demographic_survey-job
+              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+              ScriptPath: !Ref ScriptPath
+              TempDirectory: !Join
+              - ''
+              - - 's3://'
+                - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                - '/temp-dir'
+              InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+              InputTable: t_demographic_survey
+              OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+              OutputPath: FILU
+          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+      Type: AWS::CloudFormation::Stack
+    tdemographictagvalueGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic_tag_value-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic_tag_value
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tdemographicsurveyvalueGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic_survey_value-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic_survey_value
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tdemographicsurveyattributeGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic_survey_attribute-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic_survey_attribute
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tdemographictagattributeGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic_tag_attribute-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic_tag_attribute
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tvisitedaffiliateGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_visited_affiliate-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_visited_affiliate
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tdemographicGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tdemographictagGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_demographic_tag-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_demographic_tag
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tbaseidGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_baseid-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_baseid
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+    tsubscribedofferGlueJob: 
+        Properties: 
+            Parameters: 
+                ENVIRONMENT: !Ref 'ENVIRONMENT'
+                COMPANYNAME: !Ref 'COMPANYNAME'
+                OWNER: !Ref 'OWNER'
+                ProjectName: !Ref ProjectName
+                NAME: t_subscribed_offer-job
+                AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+                KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+                ScriptPath: !Ref ScriptPath
+                TempDirectory: !Join
+                - ''
+                - - 's3://'
+                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+                  - '/temp-dir'
+                InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
+                InputTable: t_subscribed_offer
+                OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+                OutputPath: FILU
+            TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+        Type: AWS::CloudFormation::Stack
+
+
+
+
+
+
+
+Outputs:
+  RawBucketName:
+    Description: Bucket name for raw
+    Value: !GetAtt 'BucketsRaw.Outputs.S3BucketName'
+    Export: 
+      Name: !Sub '${AWS::StackName}-RawBucketName'
+  RawBucketARN:
+    Description: Bucket ARN for raw
+    Value: !GetAtt 'BucketsRaw.Outputs.S3BucketARN'
+    Export: 
+      Name: !Sub '${AWS::StackName}-RawBucketARN'
+  KmsKeyArn:
+    Description: The Key ARN for the KMS user defined key
+    Value: !GetAtt 'KmsKey.Outputs.KeyArn'
+    Export: 
+      Name: !Sub '${AWS::StackName}-KmsKeyArn'
+  KmsKeyId:
+    Description: The Key Id for the KMS user defined key
+    Value: !GetAtt 'KmsKey.Outputs.KeyId'
+    Export: 
+      Name: !Sub '${AWS::StackName}-KmsKeyId'
+  KinesisStreamArn:
+    Description: The Arn of Kinesis Stream
+    Value: !GetAtt 'KinesisStream.Outputs.DataStreamARN'
+    Export: 
+      Name: !Sub '${AWS::StackName}-KinesisStreamArn'
+  DeliveryStreamName:
+    Description: Name of the Kinesis Firehose.
+    Value: !GetAtt KinesisFirehose.Outputs.DeliveryStreamName
+ 

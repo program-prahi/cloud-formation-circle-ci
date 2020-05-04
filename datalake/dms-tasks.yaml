@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DMS: Replication Tasks.'
+Parameters: 
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: 'Naming conventions for the company '
+    Type: String  
+  OWNER:
+    Type: String
+    Default: Jacob Puthuparambil
+    Description: enter the 'owner' tag value
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+  ReplicationInstanceArn:
+    Type: String
+  DMSKinesisSourceEndpointArn:
+    Type: String
+  DMSKinesisTargetEndpointArn:
+    Type: String
+  DMSS3SourceEndpointArn:
+    Type: String
+  DMSS3TargetEndpointArn:
+    Type: String
+  DMSTaskName:
+    Type: String
+Resources:
+    DMSCDCTask:
+        Type: AWS::DMS::ReplicationTask
+        Properties: 
+          MigrationType: cdc
+          ReplicationInstanceArn: !Ref ReplicationInstanceArn
+          ReplicationTaskIdentifier: !Sub '${DMSTaskName}-kinesis-task'
+          SourceEndpointArn: !Ref DMSKinesisSourceEndpointArn
+          TableMappings: 
+            !Sub |
+              {
+                  "rules": [
+                      {
+                          "rule-type": "selection",
+                          "rule-id": "1",
+                          "rule-name": "1",
+                          "object-locator": {
+                              "schema-name": "FILU",
+                              "table-name": "%"
+                          },
+                          "rule-action": "include"
+                      }
+                  ]
+              }
+          ReplicationTaskSettings: 
+            !Sub |
+                {
+                  "Logging": {
+                            "EnableLogging": true
+                    }
+                }
+          TargetEndpointArn: !Ref DMSKinesisTargetEndpointArn
+          Tags: 
+            - Key: 'Owner'
+              Value: !Sub '${OWNER} - ${COMPANYNAME}'
+            - Key: 'Environment'
+              Value: !Ref ENVIRONMENT
+            - Key: 'Project'
+              Value: !Ref ProjectName
+    DMSFullLoadTask:
+        Type: AWS::DMS::ReplicationTask
+        Properties: 
+            MigrationType: full-load
+            ReplicationInstanceArn: !Ref ReplicationInstanceArn
+            ReplicationTaskIdentifier: !Sub '${DMSTaskName}-s3-task'
+            SourceEndpointArn: !Ref DMSS3SourceEndpointArn
+            TableMappings: 
+                !Sub |
+                    {
+                        "rules": [
+                            {
+                                "rule-type": "selection",
+                                "rule-id": "1",
+                                "rule-name": "1",
+                                "object-locator": {
+                                    "schema-name": "FILU",
+                                    "table-name": "%"
+                                },
+                                "rule-action": "include"
+                            }
+                        ]
+                    }
+            ReplicationTaskSettings: 
+                !Sub |
+                    {
+                      "Logging": {
+                                "EnableLogging": true
+                        }
+                    }
+            TargetEndpointArn: !Ref DMSS3TargetEndpointArn
+            Tags: 
+            - Key: 'Owner'
+              Value: !Sub '${OWNER} - ${COMPANYNAME}'
+            - Key: 'Environment'
+              Value: !Ref ENVIRONMENT
+            - Key: 'Project'
+              Value: !Ref ProjectName
+    DMSCloudwatchRole:
+      Type: AWS::IAM::Role
+      Properties:
+          AssumeRolePolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+              -
+                  Effect: "Allow"
+                  Principal: 
+                      Service:
+                        - "dms.amazonaws.com"
+                  Action:
+                  - "sts:AssumeRole"
+          Path: '/'
+          Description: "Role for DMS service for logging into cloudwatch."
+          ManagedPolicyArns: 
+            - arn:aws:iam::aws:policy/service-role/AmazonDMSCloudWatchLogsRole
+          RoleName: dms-cloudwatch-logs-role    
+          Tags: 
+              - Key: "Owner"
+                Value: !Sub '${OWNER} - ${COMPANYNAME}'
+
+Outputs:
+  DMSCDCTaskArn:
+    Description: ARN of the DMS CDC Task.
+    Value: !Ref DMSCDCTask
+  DMSFullLoadTaskArn:
+    Description: ARN of the DMS Full Load Task.
+    Value: !Ref DMSFullLoadTask

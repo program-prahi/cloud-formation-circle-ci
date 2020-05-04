@@ -55,21 +55,23 @@ def get_secret():
 
 
 def list_stacks():
+    stack_name = os.environ["STACK_NAME"]
     stack_names = list()
     cf_client = boto3.client('cloudformation')
     response = cf_client.list_stacks(StackStatusFilter=['CREATE_COMPLETE','UPDATE_COMPLETE'])
     for i in response['StackSummaries']:
         stack_names.append(i['StackName'])
-    if "test-circleci-stack" in stack_names:
+    if stack_name in stack_names:
         update_stack()
     else:
         create_stack()
 
 
 def describe_stacks():
+    stack_name = os.environ["STACK_NAME"]
     errors = ['CREATE_FAILED','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE']
     cf_client = boto3.client('cloudformation')
-    response = cf_client.describe_stacks(StackName='test-circleci-stack')
+    response = cf_client.describe_stacks(StackName=stack_name)
     time.sleep(10)
     if response['Stacks'][0]['StackStatus'] == 'CREATE_IN_PROGRESS':
         describe_stacks()
@@ -79,15 +81,16 @@ def describe_stacks():
         exit(254) 
 
 def update_stack():
+    stack_name = os.environ["STACK_NAME"]
     print("update_stack")
     cf_client = boto3.client('cloudformation')
-    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/bucket.yaml"
+    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/datalake.yaml"
     parameters = open("parameters.json",'r')
     parameters_json = json.load(parameters)
     parameters.close()
     try:
         response = cf_client.update_stack(
-            StackName='test-circleci-stack',
+            StackName=stack_name,
             TemplateURL=templateurl,
             Parameters=parameters_json)
     except ClientError as e:
@@ -97,14 +100,15 @@ def update_stack():
 
 
 def create_stack():
+    stack_name = os.environ["STACK_NAME"]
     cf_client = boto3.client('cloudformation')
-    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/bucket.yaml"
+    templateurl = "https://"+os.environ['SYNC_BUCKET_NAME']+".s3.amazonaws.com/datalake.yaml"
     parameters = open("parameters.json",'r')
     parameters_json = json.load(parameters)
     parameters.close()
     try:
         response = cf_client.create_stack(
-            StackName='test-circleci-stack',
+            StackName=stack_name,
             TemplateURL=templateurl,
             Parameters=parameters_json)
     except ClientError as e:
@@ -122,8 +126,12 @@ if __name__ == '__main__':
     for i in range(0, len(parameters_json)):
         if parameters_json[i]["ParameterKey"] == "DBName":
             parameters_json[i]["ParameterValue"] = secret_value["DBName"]
-        if parameters_json[i]["ParameterKey"] == "DBPassword":
+        if parameters_json[i]["ParameterKey"] == "Password":
             parameters_json[i]["ParameterValue"] = secret_value["Password"]
+        if parameters_json[i]["ParameterKey"] == "Username":
+            parameters_json[i]["ParameterValue"] = secret_value["Username"]
+        if parameters_json[i]["ParameterKey"] == "Host":
+            parameters_json[i]["ParameterValue"] = secret_value["Host"]
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()

@@ -38,11 +38,12 @@ Parameters:
     - 'yes'
     - 'no'
     Description: "Assign default lifecycle: 60 days -> OneZone IA, 180 days -> Glacier, 365 days -> deeps archive"
-  DBName:
+  Versioning:
     Type: String
-  DBPassword:
-    Type: String
-    NoEcho: true
+    AllowedValues:
+      - Enabled
+      - Suspended
+    Default: Suspended
 Conditions:
   NeedToUseLifeCycleRules: !Equals [!Ref USELIFECYCLE, 'yes']    
 Resources:
@@ -86,13 +87,7 @@ Resources:
         - Key: "Environment"
           Value: !Ref ENVIRONMENT
       VersioningConfiguration:
-        Status: Enabled
-  # VPC:
-  #   Type: AWS::EC2::VPC
-  #   Properties:
-  #     CidrBlock: 10.10.0.0/16
-  #     EnableDnsSupport: true
-  #     EnableDnsHostnames: true
+        Status: !Ref Versioning
 Outputs: 
   S3BucketARN: 
     Description: 'S3Bucket ARN.'

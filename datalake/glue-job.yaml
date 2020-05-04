@@ -1,0 +1,107 @@
+---
+    AWSTemplateFormatVersion: 2010-09-09
+    Description: Creates a Glue Job and Security COnfiguration
+    Parameters: 
+        NAME: 
+            Type: String
+            Default: job-name
+            Description: The name of the Glue Job you want to create
+        AWSGlueJobRole: 
+            Type: String
+            Default: service-role-arn
+            Description: The IAM service role to use to run the job
+        KMSARN:
+            Type: String
+            Description: ARN to the KMS key to encrypt the uploaded files
+        ScriptPath: 
+            Type: String
+            Description: The S3 location of the Job Path
+        TempDirectory:
+            Type: String
+            Description: The S3 location of the temp directory
+        InputDatabase: 
+            Type: String
+            Description: The database name for the input of the job
+        InputTable: 
+            Type: String
+            Description: The table name for the input of the job
+        OutputBucket: 
+            Type: String
+            Description: The Bucket name for the target of the glue job
+        OutputPath: 
+            Type: String
+            Description: The path/prefix for the output 
+        COMPANYNAME: 
+            AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+            ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
+            Default: fluent
+            Description: "S3 bucket naming conventions for the company the stuff is all for"
+            Type: String  
+        OWNER:
+            Type: String
+            Default: Jacob Puthuparambil 
+            Description: enter the 'owner' tag value
+        ENVIRONMENT: 
+            Type: String    
+            AllowedValues:
+            - dev
+            - staging
+            - qa
+            - production
+        ProjectName:
+            Type: String
+            Description: Name of the project
+            Default: datalake            
+
+    
+    Resources:
+        DataSecurityConfiguration:
+            Type: AWS::Glue::SecurityConfiguration
+            Properties: 
+                EncryptionConfiguration: 
+                    S3Encryptions: 
+                        - S3EncryptionMode: SSE-KMS
+                          KmsKeyArn: !Ref KMSARN     
+                    CloudWatchEncryption:
+                        CloudWatchEncryptionMode: SSE-KMS
+                        KmsKeyArn: !Ref KMSARN  
+                         
+                Name: !Sub "${NAME}-Security"
+        
+        GlueJob:
+            Type: "AWS::Glue::Job"
+            Properties:
+                Role: !Ref AWSGlueJobRole
+                GlueVersion: '1.0'
+                Command: 
+                    Name: glueetl
+                    PythonVersion: 3
+                    ScriptLocation: !Ref ScriptPath
+                DefaultArguments: {
+                        "--TempDir": !Ref TempDirectory,
+                        "--job-bookmark-option": "job-bookmark-disable",
+                        "--job-language": "python",
+                        "--enable-metrics": "true",
+                        "--enable-continuous-cloudwatch-log": "true",
+                        "--enable-continuous-log-filter": "false", 
+                        "--AWS_REGION": !Sub "${AWS::Region}",
+                        "--input_database": !Ref InputDatabase,
+                        "--input_table": !Ref InputTable,
+                        "--output_bucket": !Ref OutputBucket,
+                        "--output_path": !Ref OutputPath
+                    }
+                MaxCapacity: 10
+                Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}' 
+                MaxRetries: 0
+                Description: !Sub 'Glue Job ${NAME} for ${COMPANYNAME} that reads from ${ScriptPath}'
+                SecurityConfiguration: !Ref DataSecurityConfiguration
+                Timeout: 2880
+                Tags: 
+                    Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}'
+                    Owner: !Sub '${OWNER}-${COMPANYNAME}'
+                    ENVIRONMENT: !Ref ENVIRONMENT
+
+    Outputs: 
+      GlueJob: 
+        Description: 'Glue Job'
+        Value: !Ref GlueJob  

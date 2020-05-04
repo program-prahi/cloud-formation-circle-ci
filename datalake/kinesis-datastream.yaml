@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Kinesis: Streaming CDC of DMS to Raw Zone of S3'
+Parameters: 
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: 'naming conventions for the company'
+    Type: String  
+  OWNER:
+    Type: String
+    Default: Jacob Puthuparambil
+    Description: enter the 'owner' tag value
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+  KMSARN:
+    Type: String
+    Description: ARN to the KMS key to encrypt the uploaded files
+  KinesisDataStreamName:
+    Type: String
+    Description: 'Kinesis Topic Name For Kinesis Data Stream Ingestion'
+Resources:
+    KinesisDataStream:
+        Type: AWS::Kinesis::Stream
+        Properties: 
+            Name: !Ref KinesisDataStreamName
+            RetentionPeriodHours: 24
+            ShardCount: 5
+            StreamEncryption: 
+                EncryptionType: 'KMS'
+                KeyId: !Ref KMSARN 
+            Tags: 
+                - Key: 'Owner'
+                  Value: !Sub '${OWNER} - ${COMPANYNAME}'
+                - Key: 'Environment'
+                  Value: !Ref ENVIRONMENT
+                - Key: 'Project'
+                  Value: !Ref ProjectName
+Outputs:
+  DataStreamARN:
+    Description: 'Kinesis Data Stream ARN'
+    Value: !GetAtt KinesisDataStream.Arn

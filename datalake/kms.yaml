@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Security: KMS customer managed CMK for AWS services'
+Parameters: 
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: "Naming conventions for the company"
+    Type: String  
+  OWNER:
+    Type: String
+    Default: Jacob Puthuparambil
+    Description: enter the 'owner' tag value
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+Resources:
+  Key:
+    DeletionPolicy: Retain
+    Type: 'AWS::KMS::Key'
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: Enable Root User
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Sid: Allow usage
+          Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'kms:Encrypt'
+          - 'kms:Decrypt'
+          - 'kms:ReEncrypt*'
+          - 'kms:GenerateDataKey*'
+          - 'kms:CreateGrant'
+          - 'kms:ListGrants'
+          - 'kms:DescribeKey'
+          Resource: '*'
+      Tags: 
+      - Key: "Owner"
+        Value: !Sub '${OWNER} - ${COMPANYNAME}'
+      - Key: "Name"
+        Value: !Sub '${COMPANYNAME}-${ProjectName}-CMK-${ENVIRONMENT}-${AWS::AccountId}'
+      - Key: "Environment"
+        Value: !Ref ENVIRONMENT
+  KeyAlias:
+    DeletionPolicy: Retain
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/${ProjectName}-CMK-${ENVIRONMENT}'
+      TargetKeyId: !Ref Key
+Outputs:
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  KeyId:
+    Description: 'Key id.'
+    Value: !Ref Key
+    Export:
+      Name: !Sub '${AWS::StackName}-KeyId'
+  KeyArn:
+    Description: 'Key ARN.'
+    Value: !GetAtt 'Key.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-KeyArn'

@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Kinesis: Streaming CDC of DMS to Raw Zone of S3'
+Parameters: 
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: 'Naming conventions for the company '
+    Type: String  
+  OWNER:
+    Type: String
+    Default: Jacob Puthuparambil
+    Description: enter the 'owner' tag value
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+  KMSId:
+    Type: String
+    Description: ARN to the KMS key to encrypt the uploaded files
+  DMSEndpointName:
+    Type: String
+    Description: 'DMS Endpoint Identifier for connecting to Kinesis Stream'
+  KinesisStreamArn:
+    Type: String
+    Description: 'Kinesis Topic Name For Kinesis Data Stream Ingestion'
+  RawBucketName:
+    Type: String
+    Description: 'Name of the Bucket in Raw zone'
+  BucketFolder:
+    Type: String
+  SourceDBSecretArn:
+    Type: String
+
+Resources:
+  SourceEndpoint: 
+    Properties: 
+        EndpointIdentifier: !Sub '${DMSEndpointName}-mysql-source-endpoint' 
+        DatabaseName: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:dbname}}' ]]
+        EndpointType: source
+        EngineName: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:engine}}' ]]
+        Password: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:password}}' ]]
+        Port: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:port}}' ]]
+        ServerName: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:host}}' ]]
+        Tags: 
+          - Key: 'Owner'
+            Value: !Sub '${OWNER} - ${COMPANYNAME}'
+          - Key: 'Environment'
+            Value: !Ref ENVIRONMENT
+          - Key: 'Project'
+            Value: !Ref ProjectName
+        Username: !Join ['', ['{{resolve:secretsmanager:', !Ref SourceDBSecretArn, ':SecretString:username}}' ]]
+    Type: "AWS::DMS::Endpoint"
+  DMSKinesisRole:
+    Type: AWS::IAM::Role
+    Properties:
+        AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            -
+                Effect: "Allow"
+                Principal: 
+                    Service:
+                      - "dms.amazonaws.com"
+                Action:
+                - "sts:AssumeRole"
+        Path: '/'
+        Description: "Role for DMS service to access Kinesis stream."
+        RoleName: !Sub '${ProjectName}-${ENVIRONMENT}-dms-kinesis-${ENVIRONMENT}-service-role'    
+        Tags: 
+            - Key: "Owner"
+              Value: !Sub '${OWNER} - ${COMPANYNAME}'
+  DMSKinesisPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+          PolicyName: !Sub dmskinesispolicy-${ProjectName}-${ENVIRONMENT}
+          PolicyDocument:
+              Statement:
+              - 
+                  Effect: "Allow"
+                  Action: 
+                      - "kinesis:PutRecord"
+                      - "kinesis:PutRecords"
+                      - "kinesis:DescribeStream"
+                  Resource: 
+                      - !Ref KinesisStreamArn
+          Roles:
+              - !Ref DMSKinesisRole
+  
+  DMSKinesisEndpoint:
+    Type: AWS::DMS::Endpoint
+    Properties: 
+        EndpointIdentifier: !Sub '${DMSEndpointName}-${ENVIRONMENT}-kinesis-endpoint'
+        EndpointType: target
+        EngineName: kinesis
+        KinesisSettings: 
+          MessageFormat: json 
+          ServiceAccessRoleArn: !GetAtt DMSKinesisRole.Arn
+          StreamArn: !Ref KinesisStreamArn
+        KmsKeyId: !Ref KMSId
+        Tags: 
+        - Key: 'Owner'
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: 'Environment'
+          Value: !Ref ENVIRONMENT
+        - Key: 'Project'
+          Value: !Ref ProjectName
+
+  DMSS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+        AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            -
+                Effect: "Allow"
+                Principal: 
+                    Service:
+                      - "dms.amazonaws.com"
+                Action:
+                - "sts:AssumeRole"
+        Path: '/'
+        Description: "Role for DMS service to access S3 stream."
+        RoleName: !Sub '${ProjectName}-${ENVIRONMENT}-dms-s3-service-role'    
+        Tags: 
+            - Key: "Owner"
+              Value: !Sub '${OWNER} - ${COMPANYNAME}'
+  DMSS3Policy:
+      Type: AWS::IAM::Policy
+      Properties:
+          PolicyName: !Sub dmss3policy-${ENVIRONMENT}-${ProjectName}
+          PolicyDocument:
+              Statement:
+              - 
+                  Effect: "Allow"
+                  Action: "s3:*"
+                  Resource: 
+                     - !Sub 'arn:aws:s3:::${RawBucketName}/*'
+                     - !Sub 'arn:aws:s3:::${RawBucketName}'
+              - 
+                  Effect: "Allow"
+                  Action: 
+                      - "kms:*"
+                  Resource: 
+                      - !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSId}'
+          Roles:
+              - !Ref DMSS3Role
+  DMSS3Endpoint:
+    Type: AWS::DMS::Endpoint
+    DependsOn: DMSS3Policy
+    Properties: 
+        EndpointIdentifier: !Sub '${DMSEndpointName}-${ENVIRONMENT}-s3-endpoint'
+        EndpointType: target
+        EngineName: s3
+        S3Settings:
+          BucketFolder: !Ref BucketFolder
+          BucketName: !Ref RawBucketName
+          CompressionType: none
+          CsvDelimiter: "|"
+          ServiceAccessRoleArn: !GetAtt DMSS3Role.Arn
+        ExtraConnectionAttributes: !Sub "addColumnName=true;EncryptionMode=SSE_KMS;ServerSideEncryptionKmsKeyId=${KMSId}"
+        KmsKeyId: !Ref KMSId
+        Tags: 
+        - Key: 'Owner'
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: 'Environment'
+          Value: !Ref ENVIRONMENT
+        - Key: 'Project'
+          Value: !Ref ProjectName
+  
+
+Outputs:
+  DMSKinesisEndpointArn:
+    Description: The Key ARN for the KMS user defined key
+    Value: !Ref DMSKinesisEndpoint
+  DMSS3EndpointArn:
+    Description: The Key ARN for the KMS user defined key
+    Value: !Ref DMSS3Endpoint
+  SourceEndpointArn:
+    Description: The Key ARN for the KMS user defined key
+    Value: !Ref SourceEndpoint

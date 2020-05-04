@@ -1,0 +1,316 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create IAM roles.
+Parameters:
+  TransientBucketARN:
+    Description: Transient bucket ARN
+    Type: String
+  RawBucketARN:
+    Description: Raw bucket ARN
+    Type: String 
+  KmsKeyArn: 
+    Type: String
+    Description: KMS Key ARN for kms encryption and decryption
+  OWNER:
+    Type: String
+    Default: 'Jacob Puthuparambil'
+    Description: enter the 'owner' tag value
+  COMPANYNAME: 
+    AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+    ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+      It cannot start or end with a hyphen (-).
+    Default: fluent
+    Description: "S3 bucket naming conventions for the company the stuff is all for"
+    Type: String 
+  ENVIRONMENT: 
+    Type: String    
+    AllowedValues:
+    - dev
+    - qa
+    - staging
+    - production
+  GlueScriptsBucketARN:
+    Description: Glue Repository bucket ARN
+    Type: String   
+  GlueTempBucketARN:
+    Description: Glue Temporary bucket ARN
+    Type: String  
+ 
+Resources:
+  TransientBucketPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-refined-bucket-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              - !Ref 'TransientBucketARN'
+              - !Sub '${TransientBucketARN}/*'
+          - Action: 
+              - kms:Decrypt  
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Effect: Allow
+            Resource: 
+              - !Ref KmsKeyArn
+        
+  RawBucketPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-raw-bucket-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              - !Ref 'RawBucketARN'
+              - !Sub '${RawBucketARN}/*'
+          - Action: 
+              - kms:Decrypt  
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Effect: Allow
+            Resource: 
+              - !Ref KmsKeyArn
+
+  GlueScriptsBucketPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-glue-repo-bucket-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              - !Ref 'GlueScriptsBucketARN'
+              - !Sub '${GlueScriptsBucketARN}/*'
+          - Action: 
+              - kms:Decrypt  
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Effect: Allow
+            Resource: 
+              - !Ref KmsKeyArn
+  GlueTempBucketPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-glue-temp-bucket-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              - !Ref 'GlueTempBucketARN'
+              - !Sub '${GlueTempBucketARN}/*'
+          - Action: 
+              - kms:Decrypt  
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Effect: Allow
+            Resource: 
+              - !Ref KmsKeyArn
+          
+  KmsAccessPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-kms-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+        - Action: 
+            - kms:Decrypt  
+            - kms:Encrypt
+            - kms:GenerateDataKey
+          Effect: Allow
+          Resource: 
+            - !Ref KmsKeyArn
+  CloudwatchLoggingPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-cloudwatch-logging-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+            - Action: 
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:AssociateKmsKey
+              Effect: Allow
+              Resource: 
+                - arn:aws:logs:*:*:/aws-glue/*
+                - arn:aws:logs:*:*:*
+  InvokeLambdaPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-invoke-lambda-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action: 
+              - lambda:InvokeFunction
+            Effect: Allow
+            Resource: 
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
+  AWSGlueTransientCrawlerRole:
+    Type: AWS::IAM::Role
+    DependsOn: TransientBucketPolicy
+    Properties:
+      Path: /
+      RoleName: !Sub '${COMPANYNAME}-role-glueTransientCrawler'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - !Ref TransientBucketPolicy
+        - !Ref KmsAccessPolicy
+        - !Ref CloudwatchLoggingPolicy
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Name"
+          Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Refined Crawler'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT
+        
+  AWSGlueRawCrawlerRole:
+    Type: AWS::IAM::Role
+    DependsOn: RawBucketPolicy
+    Properties:
+      RoleName: !Sub '${COMPANYNAME}-role-glueRawCrawler'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - !Ref RawBucketPolicy
+        - !Ref KmsAccessPolicy
+        - !Ref CloudwatchLoggingPolicy
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Name"
+          Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Raw Crawler'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT
+        
+
+  AWSGlueJobRoleEtl:
+    Type: AWS::IAM::Role
+    DependsOn: 
+      - TransientBucketPolicy
+      - RawBucketPolicy
+      - GlueScriptsBucketPolicy
+      - GlueTempBucketPolicy
+      - CloudwatchLoggingPolicy
+      - InvokeLambdaPolicy
+    Properties:
+      Path: /
+      RoleName: !Sub '${COMPANYNAME}-role-glueEtlJob'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+      Policies:
+        - PolicyName: AWSGlueJobS3DeleteAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:DeleteObject
+                Effect: Allow
+                Resource:
+                  - !Sub '${TransientBucketARN}/*'
+                  - !Sub '${RawBucketARN}/*'
+                  - !Sub '${GlueTempBucketARN}/*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole    
+        - !Ref TransientBucketPolicy
+        - !Ref RawBucketPolicy
+        - !Ref GlueScriptsBucketPolicy
+        - !Ref GlueTempBucketPolicy
+        - !Ref CloudwatchLoggingPolicy
+        - !Ref InvokeLambdaPolicy
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Name"
+          Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Glue ETL'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT
+  CloudwatchEventRole:
+    Type: AWS::IAM::Role
+    DependsOn: 
+      - CloudwatchLoggingPolicy
+      - InvokeLambdaPolicy
+    Properties:
+      Path: /
+      RoleName: !Sub '${COMPANYNAME}-role-cloudwatch-event'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchEventsFullAccess
+        - !Ref CloudwatchLoggingPolicy
+        - !Ref InvokeLambdaPolicy
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Name"
+          Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Glue Ingest'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT
+        
+Outputs:
+    glueEtlJobRoleARN:
+      Value: !GetAtt AWSGlueJobRoleEtl.Arn 
+    AWSGlueRawCrawlerRoleARN:
+      Value: !GetAtt AWSGlueRawCrawlerRole.Arn
+    AWSGlueTransientCrawlerRoleArn:
+      Value: !GetAtt AWSGlueTransientCrawlerRole.Arn

@@ -1,0 +1,149 @@
+---
+    AWSTemplateFormatVersion: 2010-09-09
+    Description: Creates a Glue Crawler and Security Configuration
+    Parameters: 
+      CrawlerName:
+        Type: String
+      DATABASENAME: 
+        Type: String
+        Default: glue_database
+        Description: The name of the Metadata Database you want to use. It will create if doesn't exist
+      CDCDatabaseName:
+        Type: String
+        Default: fluent_dev_kinesis_delivery_database
+        Description: If you're using crawler for cdc data.
+      CDCTableName:
+        Type: String
+        Default: fluent_dev_cdc_table
+        Description: If you're using crawler for cdc data.
+      SERVICEROLEARN: 
+        Type: String
+        Default: service-role-arn
+        Description: The IAM service role to use to run the job
+      KMSARN:
+        Type: String
+        Description: ARN to the KMS key to encrypt the uploaded files
+      TypeOfConnectionToCrawl:
+        Type: String
+        AllowedValues: 
+          - cdc
+          - s3
+        Default: s3
+        Description: Should the ConnectionInformation Array have S3 or cdc info?
+      S3ConnectionInformation: 
+        Type: String
+        Description: bucketname/prefix
+        Default: None  
+      COMPANYNAME: 
+        AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+        ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+          It cannot start or end with a hyphen (-).
+        Default: fluent
+        Description: "S3 bucket naming conventions for the company the stuff is all for"
+        Type: String  
+      OWNER:
+        Type: String
+        Default: Jacob Puthuparambil
+        Description: enter the 'owner' tag value
+      ENVIRONMENT: 
+        Type: String    
+        AllowedValues:
+        - dev
+        - qa
+        - staging
+        - production
+        
+      ProjectName:
+        Type: String
+        Description: Name of the project
+        Default: datalake 
+      TypeofData:
+        Type: String
+        AllowedValues:
+            - raw
+            - transient
+            - cdc
+            - refined
+    Conditions:
+        CDCCrawler: !Equals
+            - !Ref TypeOfConnectionToCrawl   
+            - cdc
+        S3Crawler: !Equals
+            - !Ref TypeOfConnectionToCrawl   
+            - s3
+        Dataclassifier: !Equals
+            - !Ref TypeofData
+            - raw
+    
+    Resources:
+        DataSecurityConfiguration:
+            Type: AWS::Glue::SecurityConfiguration
+            Properties: 
+                EncryptionConfiguration: 
+                    S3Encryptions: 
+                    - S3EncryptionMode: SSE-KMS
+                      KmsKeyArn: !Ref KMSARN    
+                    CloudWatchEncryption:
+                        CloudWatchEncryptionMode: SSE-KMS
+                        KmsKeyArn: !Ref KMSARN         
+                Name: !Sub "${CrawlerName}-Security"
+        GlueDatabase:
+            Condition: S3Crawler
+            Type: AWS::Glue::Database
+            Properties:
+                CatalogId: !Ref AWS::AccountId
+                DatabaseInput:
+                    Description: !Sub "glue database for ${ProjectName}"
+                    Name: !Sub '${DATABASENAME}-${ENVIRONMENT}'
+        Classifier:
+            Condition: Dataclassifier
+            Type: AWS::Glue::Classifier
+            Properties: 
+                CsvClassifier:
+                    ContainsHeader: PRESENT
+                    Delimiter: '|'
+                    Name: PipeClassifier
+                    QuoteSymbol: '"'
+        S3rawDataCrawler:
+            Condition: S3Crawler
+            Type: AWS::Glue::Crawler
+            Properties:
+                Name: !Ref CrawlerName
+                Classifiers:
+                    - !If [Dataclassifier, !Ref Classifier, !Ref 'AWS::NoValue']
+                Role: !Ref SERVICEROLEARN
+                DatabaseName: !Ref GlueDatabase
+                CrawlerSecurityConfiguration: !Ref DataSecurityConfiguration
+                Targets: 
+                    S3Targets: 
+                        - Path: !Ref S3ConnectionInformation
+                SchemaChangePolicy:
+                    UpdateBehavior: "UPDATE_IN_DATABASE"
+                    DeleteBehavior: "DEPRECATE_IN_DATABASE"
+                Tags: 
+                    Owner: !Sub '${OWNER} - ${COMPANYNAME}'
+                    Environment: !Ref ENVIRONMENT
+        S3DataCrawler:
+            Condition: CDCCrawler
+            Type: AWS::Glue::Crawler
+            Properties:
+                Name: !Ref CrawlerName
+                Role: !Ref SERVICEROLEARN
+                CrawlerSecurityConfiguration: !Ref DataSecurityConfiguration
+                Targets: 
+                    CatalogTargets:
+                        - DatabaseName: !Ref CDCDatabaseName
+                          Tables: 
+                            - !Ref CDCTableName                  
+                SchemaChangePolicy:
+                    UpdateBehavior: "UPDATE_IN_DATABASE"
+                    DeleteBehavior: "LOG"
+                Tags: 
+                    Owner: !Sub '${OWNER} - ${COMPANYNAME}'
+                    
+                    Environment: !Ref ENVIRONMENT
+            
+    Outputs:
+        GlueDatabaseName:
+            Value: !If [S3Crawler, !Ref GlueDatabase, "False"]    
+    

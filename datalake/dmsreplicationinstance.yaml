@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DMS Replication Instance'
+Parameters: 
+    ENVIRONMENT: 
+        Type: String    
+        AllowedValues:
+        - dev
+        - qa
+        - staging
+        - production
+    COMPANYNAME: 
+        AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+        ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
+        Default: fluent
+        Description: 'Naming conventions for the company '
+        Type: String  
+    OWNER:
+        Type: String
+        Default: Jacob Puthuparambil
+        Description: enter the 'owner' tag value
+    ProjectName:
+        Type: String
+        Description: Name of the project
+        Default: datalake
+    PublicSubnet1Id:
+        Type: String
+        Description: ID of public subnet 1.
+    PublicSubnet2Id:
+        Type: String
+        Description: ID of public subnet 2.
+    ReplicationInstanceClass:
+        Type: String
+        Description: Instance type of Replication Instance.
+        AllowedValues:
+            - dms.t2.micro
+            - dms.t2.small
+            - dms.t2.medium
+            - dms.t2.large
+            - dms.c4.large
+            - dms.c4.xlarge
+            - dms.c4.2xlarge
+            - dms.c4.4xlarge
+    KmsKeyId:
+        Type: String
+        Description: ID of KMS key.
+
+
+Resources: 
+    ReplicationSubnetGroup: 
+        Properties: 
+            ReplicationSubnetGroupDescription: ReplicationSubnetGroup for fluent dms
+            ReplicationSubnetGroupIdentifier: !Sub '${ProjectName}-${ENVIRONMENT}-ReplicationSubnetGroup'
+            SubnetIds: 
+                - !Ref PublicSubnet1Id
+                - !Ref PublicSubnet2Id
+            Tags: 
+                - Key: Name
+                  Value: !Sub '${ProjectName}-${ENVIRONMENT}-ReplicationSubnetGroup'
+                - Key: Owner
+                  Value: !Sub '${OWNER}-${COMPANYNAME}'
+                - Key: ENVIRONMENT
+                  Value: !Ref ENVIRONMENT
+        Type: "AWS::DMS::ReplicationSubnetGroup"
+    ReplicationInstance:
+        Type: AWS::DMS::ReplicationInstance
+        Properties: 
+            AllocatedStorage: 100
+            PubliclyAccessible: true
+            MultiAZ: true
+            KmsKeyId: !Ref KmsKeyId
+            ReplicationInstanceClass: !Ref ReplicationInstanceClass
+            ReplicationInstanceIdentifier: !Sub '${ProjectName}-${ENVIRONMENT}-ReplicationInstance'
+            ReplicationSubnetGroupIdentifier: !Ref ReplicationSubnetGroup
+            Tags: 
+                - Key: Name
+                  Value: !Sub '${ProjectName}-${ENVIRONMENT}-ReplicationSubnetGroup'
+                - Key: Owner
+                  Value: !Sub '${OWNER}-${COMPANYNAME}'
+                - Key: ENVIRONMENT
+                  Value: !Ref ENVIRONMENT
+              
+Outputs:
+    ReplicationInstanceARN:
+        Description: Replication Instance ARN
+        Value: !Ref ReplicationInstance

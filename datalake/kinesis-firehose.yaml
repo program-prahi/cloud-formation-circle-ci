@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Kinesis firehose: Streaming CDC of DMS to Raw Zone of S3'
+Parameters: 
+    ENVIRONMENT: 
+        Type: String    
+        AllowedValues:
+        - dev
+        - qa
+        - staging
+        - production
+    COMPANYNAME: 
+        AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+        ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
+        Default: fluent
+        Description: 'naming conventions for the company'
+        Type: String  
+    OWNER:
+        Type: String
+        Default: Jacob Puthuparambil
+        Description: enter the 'owner' tag value
+    ProjectName:
+        Type: String
+        Description: Name of the project
+        Default: datalake
+    DeliveryStreamName:
+        Type: String
+        Description: 'Name for Delivery Stream'
+    KinesisStreamARN:
+        Type : String
+    RawZoneBucketName:
+        Type: String
+    KmsKeyArn:
+        Type: String
+Resources :
+    GlueDatabase:
+        Type: AWS::Glue::Database
+        Properties: 
+          CatalogId: !Ref AWS::AccountId
+          DatabaseInput:
+            Description: 'Glue Database for Raw Zone'
+            Name: !Sub '${COMPANYNAME}_${ENVIRONMENT}_kinesis_delivery_database'
+    GlueTable:
+        Type: AWS::Glue::Table
+        Properties:
+          CatalogId: !Ref AWS::AccountId
+          DatabaseName: !Ref GlueDatabase
+          TableInput:
+            Description: 'Glue Table for Parquet files of Kinesis Delivery Streams'
+            Name: !Sub '${COMPANYNAME}_${ENVIRONMENT}_cdc_table'
+            Owner: owner
+            StorageDescriptor:
+              Columns:
+              - Name: data
+                Type: string
+              - Name: metadata
+                Type: string
+              InputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
+              OutputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat
+              Compressed: false
+              Location: !Sub "s3://${RawZoneBucketName}/fig_cdc_files/"
+              SerdeInfo:
+                SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+                Parameters:
+                  serialization.format: '1'
+            TableType: EXTERNAL_TABLE
+    FirehoseLogGroup: 
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Sub '${ProjectName}-${ENVIRONMENT}-Firehose-Log-Group'
+            RetentionInDays: 7
+    FirehoseLogStream:
+        Type: AWS::Logs::LogStream
+        Properties: 
+            LogGroupName: !Ref FirehoseLogGroup
+            LogStreamName: !Sub '${ProjectName}-${ENVIRONMENT}-Firehose-Log-Stream'
+    Deliverystream: 
+        DependsOn: KinesisFirehosePolicy
+        Type: AWS::KinesisFirehose::DeliveryStream
+        Properties: 
+            DeliveryStreamName: !Ref DeliveryStreamName
+            DeliveryStreamType: KinesisStreamAsSource
+            KinesisStreamSourceConfiguration: 
+                KinesisStreamARN: !Ref KinesisStreamARN
+                RoleARN: !GetAtt KinesisfirehoseRole.Arn
+            ExtendedS3DestinationConfiguration: 
+                BucketARN: !Sub 'arn:aws:s3:::${RawZoneBucketName}'
+                BufferingHints: 
+                    IntervalInSeconds: 900
+                    SizeInMBs: 128
+                CloudWatchLoggingOptions:
+                    Enabled: True
+                    LogGroupName: !Ref FirehoseLogGroup
+                    LogStreamName: !Ref FirehoseLogStream
+                EncryptionConfiguration:
+                    KMSEncryptionConfig:
+                        AWSKMSKeyARN: !Ref KmsKeyArn
+                DataFormatConversionConfiguration:
+                    SchemaConfiguration:
+                        CatalogId: !Ref AWS::AccountId
+                        RoleARN: !GetAtt KinesisfirehoseRole.Arn
+                        DatabaseName: !Ref GlueDatabase
+                        TableName: !Ref GlueTable
+                        Region: !Ref AWS::Region
+                        VersionId: LATEST
+                    InputFormatConfiguration:
+                        Deserializer:
+                            OpenXJsonSerDe: {}
+                    OutputFormatConfiguration:
+                        Serializer:
+                            ParquetSerDe: {}
+                    Enabled: True    
+                CompressionFormat: UNCOMPRESSED
+                Prefix: fig_cdc_files/
+                RoleARN: !GetAtt KinesisfirehoseRole.Arn
+    
+    KinesisfirehoseRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                -
+                    Effect: "Allow"
+                    Principal: 
+                        Service:
+                            - "firehose.amazonaws.com"
+                    Action:
+                    - "sts:AssumeRole"
+            Path: '/'
+            Description: "Role for firehose service to access Kinesis stream and s3 bucket."
+            RoleName: !Sub '${ProjectName}-kinesis-firehose-${ENVIRONMENT}-service-role'    
+            Tags: 
+                - Key: "Owner"
+                  Value: !Sub '${OWNER} - ${COMPANYNAME}'
+    KinesisFirehosePolicy:
+        Type: AWS::IAM::Policy
+        Properties:
+            PolicyName: dmsfirehosepolicy
+            PolicyDocument:
+                Statement:
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "glue:GetTable"
+                        - "glue:GetTableVersion"
+                        - "glue:GetTableVersions"
+                    Resource: 
+                        - "*"
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "s3:*"
+                    Resource: 
+                        - !Sub 'arn:aws:s3:::${RawZoneBucketName}'
+                        - !Sub 'arn:aws:s3:::${RawZoneBucketName}/*'
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "lambda:InvokeFunction"
+                        - "lambda:GetFunctionConfiguration"
+                    Resource: 
+                        - "*"
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "logs:PutLogEvents"
+                    Resource: 
+                        - "*"
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "kinesis:ListStreams"
+                        - "kinesis:DescribeStream"
+                        - "kinesis:GetShardIterator"
+                        - "kinesis:GetRecords"
+                    Resource: 
+                        - !Ref KinesisStreamARN
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "logs:PutLogEvents"
+                    Resource: 
+                        - "*"
+                - 
+                    Effect: "Allow"
+                    Action: 
+                        - "kms:*"
+                    Resource: 
+                        - !Ref KmsKeyArn
+            Roles:
+                - !Ref KinesisfirehoseRole
+Outputs:
+    DeliveryStreamName:
+        Description: Name of the Kinesis Firehose.
+        Value: !Ref Deliverystream
+    DBName:
+        Value: !Ref GlueDatabase
+    TableName:
+        Value: !Ref GlueTable
