@@ -7,18 +7,38 @@ import os
 import time
 
 
+def create_role(rolename):
+    client = boto3.client('iam')
+    assume_policy_document = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "dms.amazonaws.com"
+                },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+            })
+    response = client.create_role(RoleName=rolename, AssumeRolePolicyDocument=assume_policy_document)
+    print(response)
+    if rolename == "dms-cloudwatch-logs-role":
+        response = client.attach_role_policy(RoleName=rolename, PolicyArn='arn:aws:iam::aws:policy/service-role/AmazonDMSCloudWatchLogsRole')
+        print(response)
+    if rolename == "dms-vpc-role":
+        response = client.attach_role_policy(RoleName=rolename, PolicyArn='arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole')
+        print(response)
+
+
 def get_secret():
     secret_name = os.environ["AWS_SECRET_NAME"]
     region_name = os.environ["AWS_SECRET_REGION"]
-
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
         region_name=region_name
     )
-
-    
-
     try:
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
@@ -137,4 +157,13 @@ if __name__ == '__main__':
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
+    client = boto3.client('iam')
+    try:
+        cw_role = client.get_role(RoleName='dms-cloudwatch-logs-role')
+    except client.exceptions.NoSuchEntityException as e:
+        create_role("dms-cloudwatch-logs-role")
+    try:
+        cw_role = client.get_role(RoleName='dms-vpc-role')
+    except client.exceptions.NoSuchEntityException as e:
+        create_role("dms-vpc-role")
     list_stacks()   
