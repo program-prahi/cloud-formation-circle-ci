@@ -111,7 +111,7 @@ def update_stack():
     try:
         response = cf_client.update_stack(
             StackName=stack_name,
-            TemplateURL=templateurl,
+            TemplateURL=templateurl,Capabilities=['CAPABILITY_IAM','CAPABILITY_NAMED_IAM'],
             Parameters=parameters_json)
     except ClientError as e:
         print(e.response['Error']['Message'])
@@ -130,6 +130,7 @@ def create_stack():
         response = cf_client.create_stack(
             StackName=stack_name,
             TemplateURL=templateurl,
+            Capabilities=['CAPABILITY_IAM','CAPABILITY_NAMED_IAM'],
             Parameters=parameters_json)
     except ClientError as e:
         print(e.response['Error']['Message'])
