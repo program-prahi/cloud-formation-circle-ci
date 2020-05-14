@@ -145,56 +145,58 @@ Components:
     1. Give required parameters information as specified in the table below:
 
 
-  |Parameter Name|Description & Utilization|Allowed Values|Default Value|Required?|
-  |:---:|:---:|:---:|:---:|:---:|
-  |CompanyName|S3 bucket naming conventions for the company the stuff is all for.|<Any String>|fluent|Optional|
-  |CodaS3BucketName|S3 bucket where the Quick Start templates and scripts are installed.|<Any String>|fluent-datalake-templates-dev-394780878318|Optional|
-  |CodaS3KeyPrefix|S3 key prefix used to simulate a folder for your copy of Quick Start assets.|<Any String>|data-lake/|Optional|
-  |ProjectName|Name of the project for tagging purposes.|<Any String>|datalake|Optional|
-  |Owner|Name of the Owner of the resources for tagging purposes.|<Any String>|Jacob Puthuparambil|Optional|
-  |Environment|On which environment the resources to be created.| dev/ qa/ staging/ production| |Required|
-  |VpcCIDR|The IP range (CIDR notation) for this VPC| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.0.0/16|Optional|
-  |PublicSubnet1CIDR|The IP range (CIDR notation) for this Public Subnet 1| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.50.0/24|Optional|
-  |PublicSubnet2CIDR|The IP range (CIDR notation) for this Public Subnet 2| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.40.0/24|Optional|
-  |ReplicationInstanceClass|Instance type of Replication Instance.| dms.t2.micro\ dms.t2.small\ dms.t2.medium\ dms.t2.large\ dms.c4.large\ dms.c4.xlarge\ dms.c4.2xlarge\ dms.c4.4xlarge|dms.c4.2xlarge|Optional|
-  |EndpointBucketFolder|Prefix of raw bucket where the full load data populated| |fig_full_load|Optional|
-  |Username|Username of the Database| |awsdatalake|Optional|
-  |Password|Password of the Database| | |Required|
-  |Engine|Engine type of the Database| | mysql |Optional|
-  |Host|Host address of the Database| | 34.74.194.212 |Optional|
-  |Port|Port of the Database| | 3306 |Optional|
-  |DBName|Name of the Database| | FILU |Optional|
-  |RawInputDatabaseName|Name of the Raw Zone Database| |fluent_dev_filu_db_raw|Optional|
-  |TransientInputDatabaseName|Name of the Transient Zone Database| |fluent_dev_filu_db_transient|Optional|
-  |RefinedInputDatabaseName|Name of the Refined Zone Database| |fluent_dev_filu_db_refined|Optional|
-  |EmailID|Email ID for sns to notify the glue workflow failure.| | |Required|
+|Parameter Name|Description & Utilization|Allowed Values|Default Value|Required?|
+|:---:|:---:|:---:|:---:|:---:|
+|CompanyName|S3 bucket naming conventions for the company the stuff is all for.|<Any String>|fluent|Optional|
+|CodaS3BucketName|S3 bucket where the Quick Start templates and scripts are installed.|<Any String>|fluent-datalake-templates-dev-394780878318|Optional|
+|CodaS3KeyPrefix|S3 key prefix used to simulate a folder for your copy of Quick Start assets.|<Any String>|data-lake/|Optional|
+|ProjectName|Name of the project for tagging purposes.|<Any String>|datalake|Optional|
+|Owner|Name of the Owner of the resources for tagging purposes.|<Any String>|Jacob Puthuparambil|Optional|
+|Environment|On which environment the resources to be created.| dev/ qa/ staging/ production| |Required|
+|VpcCIDR|The IP range (CIDR notation) for this VPC| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.0.0/16|Optional|
+|PublicSubnet1CIDR|The IP range (CIDR notation) for this Public Subnet 1| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.50.0/24|Optional|
+|PublicSubnet2CIDR|The IP range (CIDR notation) for this Public Subnet 2| '((\d{1,3})\.){3}\d{1,3}/\d{1,2}' |10.192.40.0/24|Optional|
+|ReplicationInstanceClass|Instance type of Replication Instance.| dms.t2.micro\ dms.t2.small\ dms.t2.medium\ dms.t2.large\ dms.c4.large\ dms.c4.xlarge\ dms.c4.2xlarge\ dms.c4.4xlarge|dms.c4.2xlarge|Optional|
+|EndpointBucketFolder|Prefix of raw bucket where the full load data populated| |fig_full_load|Optional|
+|Username|Username of the Database| |awsdatalake|Optional|
+|Password|Password of the Database| | |Required|
+|Engine|Engine type of the Database| | mysql |Optional|
+|Host|Host address of the Database| | 34.74.194.212 |Optional|
+|Port|Port of the Database| | 3306 |Optional|
+|DBName|Name of the Database| | FILU |Optional|
+|RawInputDatabaseName|Name of the Raw Zone Database| |fluent_dev_filu_db_raw|Optional|
+|TransientInputDatabaseName|Name of the Transient Zone Database| |fluent_dev_filu_db_transient|Optional|
+|RefinedInputDatabaseName|Name of the Refined Zone Database| |fluent_dev_filu_db_refined|Optional|
+|EmailID|Email ID for sns to notify the glue workflow failure.| | |Required|
 
       Note:
         * “Optional” parameter indicates that if the parameter value is not passed then the default value will be used.
+
 4.  Create a S3 Bucket to store the CloudFormation templates. 
       Note:
         * S3 bucket should be in the same region where the Cloudformation stacks wants to be deployed. 
+
 5.	Create a secret that stores the details of the Source Database. The secret should contain:
 
-  |Key|Value|
-  |:---:|:---:|
-  |Username|awsdatalake|
-  |Password||
-  |Host|34.74.194.212|
-  |DBName|FILU|
+|Key|Value|
+|:---:|:---:|
+|Username|awsdatalake|
+|Password||
+|Host|34.74.194.212|
+|DBName|FILU|
 
 6.  Create a new user with programmatic access for deploying the stacks using CircleCI. Note the Key values to store them as environment variables.
 7.  Open the CircleCI dashboard and Link the `fluent-datalake` project.  
 8.  Goto the Project Settings> Environment Variables, Add the following Environment Varibles to the project
 
-  |Key|Description|
-  |:---:|:---:|
-  |AWS_ACCESS_KEY_ID|Access Key value of the user you have created before.|
-  |AWS_SECRET_ACCESS_KEY|Secret Key value of the user you have created before.|
-  |AWS_DEFAULT_REGION|Region where the stacks to be deployed.|
-  |AWS_SECRET_NAME|Name of the AWS Secret that has the details of Database|
-  |AWS_SECRET_REGION|Region of the AWS Secret that has the details of Database|
-  |STACK_NAME|Name of the Cloudformation Stack|
-  |SYNC_BUCKET_NAME|Name of the bucket where the Cloudformation templates to be stored|
+|Key|Description|
+|:---:|:---:|
+|AWS_ACCESS_KEY_ID|Access Key value of the user you have created before.|
+|AWS_SECRET_ACCESS_KEY|Secret Key value of the user you have created before.|
+|AWS_DEFAULT_REGION|Region where the stacks to be deployed.|
+|AWS_SECRET_NAME|Name of the AWS Secret that has the details of Database|
+|AWS_SECRET_REGION|Region of the AWS Secret that has the details of Database|
+|STACK_NAME|Name of the Cloudformation Stack|
+|SYNC_BUCKET_NAME|Name of the bucket where the Cloudformation templates to be stored|
 
 9.  For every push to the `master` branch, CircleCI will create/update the stack.

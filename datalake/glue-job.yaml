@@ -71,9 +71,6 @@
                 - update
                 - insert
             Default: insert
-        TypeofZone:
-            Type: String
-            Default: "Dummy"
         SnsArn:
             Type: String
             Default: "None"
@@ -111,6 +108,9 @@
           - !Equals
             - !Ref WorkerType
             - G.2X
+        StandardWorker: !Equals
+            - !Ref WorkerType
+            - Standard
 
     Resources:
         DataSecurityConfiguration:
@@ -127,6 +127,7 @@
         
         GlueJob:
             Type: "AWS::Glue::Job"
+            Condition: StandardWorker
             Properties:
                 Role: !Ref AWSGlueJobRole
                 GlueVersion: '1.0'
@@ -152,9 +153,9 @@
                         "--WORKFLOW_ID": !Ref WORKFLOWID,
                         "--operation": !If [CDCJob,!If [CDCUpdateOperation,"update","insert"],None]
                     }
-                MaxCapacity: !If [NonStandardWorker, None, !Ref DpuCount]
-                WorkerType: !Ref WorkerType
-                NumberOfWorkers: !If [NonStandardWorker, 30, None]
+                MaxCapacity: !Ref DpuCount
+                # WorkerType: !If [NonStandardWorker,!Ref 'AWS::NoValue', !Ref WorkerType]
+                # NumberOfWorkers: !If [NonStandardWorker, !Ref DpuCount,!Ref 'AWS::NoValue']
                 Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}' 
                 MaxRetries: 0
                 Description: !Sub 'Glue Job ${NAME} for ${COMPANYNAME} that reads from ${ScriptPath}'
@@ -165,7 +166,49 @@
                     Owner: !Sub '${OWNER}-${COMPANYNAME}'
                     ENVIRONMENT: !Ref ENVIRONMENT
 
+        GlueJobNonStandardWorkerType:
+            Type: "AWS::Glue::Job"
+            Condition: NonStandardWorker
+            Properties:
+                Role: !Ref AWSGlueJobRole
+                GlueVersion: '1.0'
+                Command: 
+                    Name: glueetl
+                    PythonVersion: 3
+                    ScriptLocation: !Ref ScriptPath
+                DefaultArguments: {
+                        "--TempDir": !Ref TempDirectory,
+                        "--job-bookmark-option": !If [PlainJob, job-bookmark-disable, job-bookmark-enable],
+                        "--job-language": "python",
+                        "--enable-metrics": "true",
+                        "--enable-continuous-cloudwatch-log": "true",
+                        "--enable-continuous-log-filter": "false", 
+                        "--AWS_REGION": !Sub "${AWS::Region}",
+                        "--input_database": !Ref InputDatabase,
+                        "--input_table": !Ref InputTable,
+                        "--output_bucket": !Ref OutputBucket,
+                        "--output_path": !Ref OutputPath,
+                        "--sns_arn": !Ref SnsArn,
+                        "--first_source": !If [PlainRefinedJob,!Ref FirstSource,None],
+                        "--GLUE_ROLE": !If [PlainRefinedJob,!Ref AWSGlueJobRole,None],
+                        "--WORKFLOW_ID": !Ref WORKFLOWID,
+                        "--operation": !If [CDCJob,!If [CDCUpdateOperation,"update","insert"],None]
+                    }
+                # MaxCapacity: !If [NonStandardWorker,!Ref 'AWS::NoValue', !Ref DpuCount]
+                WorkerType: !Ref WorkerType
+                NumberOfWorkers: !Ref DpuCount
+                Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}' 
+                MaxRetries: 0
+                Description: !Sub 'Glue Job ${NAME} for ${COMPANYNAME} that reads from ${ScriptPath}'
+                SecurityConfiguration: !Ref DataSecurityConfiguration
+                Timeout: 2880
+                Tags: 
+                    Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}'
+                    Owner: !Sub '${OWNER}-${COMPANYNAME}'
+                    ENVIRONMENT: !Ref ENVIRONMENT
+
+
     Outputs: 
       GlueJob: 
         Description: 'Glue Job'
-        Value: !Ref GlueJob  
+        Value: !If [NonStandardWorker,!Ref GlueJobNonStandardWorkerType ,!Ref GlueJob]  

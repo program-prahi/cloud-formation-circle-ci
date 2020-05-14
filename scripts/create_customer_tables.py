@@ -116,7 +116,7 @@ create_year=2020
 start_month=1
 end_month=12
 start_date=1
-end_date=30
+end_date=31
 ## Ex: partition_predicate = """create_year=2020 AND create_month=05 AND create_date=12"""
 partition_predicate = """create_year={} AND
                         create_month BETWEEN {} AND {} AND

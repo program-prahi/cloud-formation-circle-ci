@@ -241,7 +241,7 @@
       SecurityGroup:
         Type: AWS::EC2::SecurityGroup
         Properties:
-          GroupName: "no-ingress-sg"
+          GroupName: "dms-mysql-ingress-sg"
           GroupDescription: "Security group with mysql ingress rule"
           VpcId: !Ref VPC
           SecurityGroupIngress:

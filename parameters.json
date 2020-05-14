@@ -4,6 +4,10 @@
         "ParameterKey": "VpcCIDR"
     },
     {
+        "ParameterValue": "s3://fluent-datalake-templates-dev-394780878318/scripts/ingestRawToTransient.py",
+        "ParameterKey": "ScriptPath"
+    },
+    {
         "ParameterValue": "10.192.50.0/24",
         "ParameterKey": "PublicSubnet1CIDR"
     },
@@ -56,8 +60,12 @@
         "ParameterKey": "CodaS3KeyPrefix"
     },
     {
-        "ParameterValue": "dtlk",
+        "ParameterValue": "datalake",
         "ParameterKey": "ProjectName"
+    },
+    {
+        "ParameterValue": "s3://fluent-datalake-templates-dev-394780878318/scripts/ingestCDCRawToTransient.py",
+        "ParameterKey": "CDCScriptPath"
     },
     {
         "ParameterValue": "",
@@ -70,14 +78,6 @@
     {
         "ParameterValue": "",
         "ParameterKey": "Host"
-    },
-    {
-        "ParameterKey": "EmailID",
-        "ParameterValue": "hariharan.krishnamurthi@coda.global"
-    },
-    {
-        "ParameterKey": "RefinedInputDatabaseName",
-        "ParameterValue": "fluent_dev_filu_db_refined"
     },
     {
         "ParameterValue": "3306",
