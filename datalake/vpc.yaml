@@ -248,7 +248,7 @@
             - IpProtocol: tcp
               FromPort: 3306
               ToPort: 3306
-              CidrIp: !Ref Host
+              CidrIp: !Sub '${Host}/32'
           Tags:
             - Key: Name
               Value: !Sub '${ProjectName}-${Environment}-No Ingress Security Group'
