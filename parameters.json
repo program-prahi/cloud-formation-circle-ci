@@ -56,7 +56,7 @@
         "ParameterKey": "CodaS3KeyPrefix"
     },
     {
-        "ParameterValue": "dsh1",
+        "ParameterValue": "dsh2",
         "ParameterKey": "ProjectName"
     },
     {
