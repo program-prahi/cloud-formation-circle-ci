@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation template to send SNS topic to an arn.
+Parameters: 
+  GlueWorkflowName:
+    Type: String
+  DMSTaskArn: 
+    Type: String
+    Description: The DMS CDC Task ARN to start
+  COMPANYNAME: 
+      AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+      ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
+      Default: fluent
+      Description: "S3 bucket naming conventions for the company the stuff is all for"
+      Type: String  
+  OWNER:
+      Type: String
+      Default: Jacob Puthuparambil 
+      Description: enter the 'owner' tag value
+  ENVIRONMENT: 
+      Type: String    
+      AllowedValues:
+      - dev
+      - staging
+      - qa
+      - production
+  ProjectName:
+    Type: String
+    Description: Name of the Project Name
+    Default: datalake    
+  SNSTopic:
+    Type: String    
+
+Resources:
+  NotificationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${ENVIRONMENT}-notification-lambda'
+      Code: 
+        S3Bucket: fluent-datalake-templates-dev-394780878318
+        S3Key: scripts/full-load-glue-lambda.zip
+      Handler: "full-load-glue-lambda.lambda_handler"
+      Timeout: 50
+      Role: !GetAtt "LambdaRole.Arn"
+      Runtime: python3.8
+      Environment:
+        Variables:
+          ReplicationTaskArn: !Ref DMSTaskArn
+          workflowname: !Ref GlueWorkflowName
+  LambdaSNSSubcription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SNSTopic
+      Endpoint: !GetAtt NotificationLambda.Arn
+      Protocol: lambda
+
+  LambdaResourcePolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName :  !Ref NotificationLambda
+      Principal: sns.amazonaws.com
+      Action: lambda:InvokeFunction
+      SourceArn: !Ref SNSTopic
+
+  # The LambdaRole is very simple for this use case, because it only need to have access to write logs
+  # If the lambda is going to access AWS services using boto3, this role must be
+  # extended to give lambda the appropriate permissions.
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      RoleName: !Sub '${ProjectName}-${ENVIRONMENT}-Lambda-role'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 
+      Policies:
+        - PolicyName: "lambda-logs-and-sns-notifications"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - glue:StartWorkflowRun
+                Resource: "*"
+              - Effect: Allow
+                Action: 
+                  - dms:ModifyReplicationTask
+                  - dms:StartReplicationTask
+                Resource: 
+                  - !Ref DMSTaskArn
+      Tags: 
+        - Key: 'Owner'
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: 'Environment'
+          Value: !Ref ENVIRONMENT
+        - Key: 'Project'
+          Value: !Ref ProjectName
+Outputs:
+  NotificationLambdaArn:
+    Description: The ARN for the lambda function that was created
+    Value: !GetAtt "NotificationLambda.Arn"
+  NotificationLambdaName:
+    Description: The id for the lambda function that was created
+    Value: "lambda-start-dms"

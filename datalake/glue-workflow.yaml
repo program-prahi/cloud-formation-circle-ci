@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DataLake Creation
+Parameters:
+      WorkflowName:
+        Type: String
+        Description: Name of the Workflow
+      ENVIRONMENT: 
+        Type: String    
+        AllowedValues:
+        - dev
+        - qa
+        - staging
+        - production
+      COMPANYNAME: 
+        AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+        ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
+          It cannot start or end with a hyphen (-).
+        Default: fluent
+        Description: "Naming conventions for the company"
+        Type: String   
+      OWNER: 
+        Type: String
+        Default: 'Jacob Puthuparambil'
+        Description: "The labeled owner for tagging purposes"  
+      ProjectName:
+        Type: String
+        Description: Name of the project
+        Default: datalake
+            
+Resources:
+  GlueWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties: 
+      DefaultRunProperties: 
+        startDate: yesterday
+        endDate: yesterday
+      Description: !Sub '${WorkflowName} Workflow to process data for ${COMPANYNAME}'
+      Name: !Sub '${ProjectName}-${ENVIRONMENT}-${WorkflowName}'
+      Tags:
+        Owner: !Sub '${OWNER} - ${COMPANYNAME}'
+        Name: !Sub '${COMPANYNAME}-${WorkflowName}-${ENVIRONMENT} Glue Workflow'
+        Environment: !Ref ENVIRONMENT
+
+Outputs:
+  WorkflowId:
+    Description: 'Workflow Identifier'
+    Value: !Ref GlueWorkflow

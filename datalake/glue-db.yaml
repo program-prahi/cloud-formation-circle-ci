@@ -25,7 +25,7 @@ Resources:
             CatalogId: !Ref AWS::AccountId
             DatabaseInput:
                 Description: !Sub "glue database for ${ProjectName}"
-                Name: !Sub '${DatabaseName}-${Environment}'
+                Name: !Sub '${DatabaseName}_${Environment}'
     
 
 Outputs:

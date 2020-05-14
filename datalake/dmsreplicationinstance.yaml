@@ -64,7 +64,7 @@ Resources:
     ReplicationInstance:
         Type: AWS::DMS::ReplicationInstance
         Properties: 
-            AllocatedStorage: 100
+            AllocatedStorage: 200
             PubliclyAccessible: true
             MultiAZ: true
             KmsKeyId: !Ref KmsKeyId

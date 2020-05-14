@@ -111,7 +111,8 @@ def update_stack():
     try:
         response = cf_client.update_stack(
             StackName=stack_name,
-            TemplateURL=templateurl,Capabilities=['CAPABILITY_IAM','CAPABILITY_NAMED_IAM'],
+            TemplateURL=templateurl,
+            Capabilities=['CAPABILITY_IAM','CAPABILITY_NAMED_IAM'],
             Parameters=parameters_json)
     except ClientError as e:
         print(e.response['Error']['Message'])
@@ -139,11 +140,12 @@ def create_stack():
     describe_stacks()
 
 if __name__ == '__main__':
-    secret_value = get_secret()
+    secret_value = get_secret() # Get the DB Credetionals from secret
     secret_value = literal_eval(secret_value)
     parameters = open("parameters.json", 'r')
     parameters_json = json.load(parameters)
     parameters.close()
+    # Placing the DB credentials in the parameters.json file
     for i in range(0, len(parameters_json)):
         if parameters_json[i]["ParameterKey"] == "DBName":
             parameters_json[i]["ParameterValue"] = secret_value["DBName"]
@@ -158,6 +160,7 @@ if __name__ == '__main__':
     parameters = open("parameters.json", 'w')
     json.dump(parameters_json, parameters)
     parameters.close()
+    # Checking DMS Cloudwatch role and DMS Vpc role are present in the account else creating the roles.
     client = boto3.client('iam')
     try:
         cw_role = client.get_role(RoleName='dms-cloudwatch-logs-role')
@@ -167,4 +170,5 @@ if __name__ == '__main__':
         cw_role = client.get_role(RoleName='dms-vpc-role')
     except client.exceptions.NoSuchEntityException as e:
         create_role("dms-vpc-role")
+    # Deploying stacks
     list_stacks()   

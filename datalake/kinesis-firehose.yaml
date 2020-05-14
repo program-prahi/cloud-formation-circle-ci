@@ -178,12 +178,6 @@ Resources :
                 - 
                     Effect: "Allow"
                     Action: 
-                        - "logs:PutLogEvents"
-                    Resource: 
-                        - "*"
-                - 
-                    Effect: "Allow"
-                    Action: 
                         - "kms:*"
                     Resource: 
                         - !Ref KmsKeyArn

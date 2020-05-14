@@ -26,7 +26,7 @@
       TypeOfConnectionToCrawl:
         Type: String
         AllowedValues: 
-          - cdc
+          - table
           - s3
         Default: s3
         Description: Should the ConnectionInformation Array have S3 or cdc info?
@@ -57,24 +57,38 @@
         Type: String
         Description: Name of the project
         Default: datalake 
-      TypeofData:
+      TypeofZone:
         Type: String
         AllowedValues:
-            - raw
-            - transient
-            - cdc
-            - refined
+          - raw
+          - transient
+          - refined
+          - cdc
+          - refined_updates
     Conditions:
-        CDCCrawler: !Equals
+        CDCTableCrawler: !Equals
             - !Ref TypeOfConnectionToCrawl   
-            - cdc
-        S3Crawler: !Equals
-            - !Ref TypeOfConnectionToCrawl   
-            - s3
-        Dataclassifier: !Equals
-            - !Ref TypeofData
+            - table
+        PlainS3DataCrawler: !Or
+          - !Equals  
+            - !Ref TypeofZone   
             - raw
-    
+          - !Equals
+            - !Ref TypeofZone
+            - transient
+        Dataclassifier: !Equals
+            - !Ref TypeofZone
+            - raw
+        RefinedCrawler: !Equals
+            - !Ref TypeofZone
+            - refined
+        isGlueDatabase: !Not
+            - !Equals
+              - !Ref TypeOfConnectionToCrawl
+              - table
+        RefinedUpdates: !Equals
+          - !Ref TypeofZone
+          - refined_updates
     Resources:
         DataSecurityConfiguration:
             Type: AWS::Glue::SecurityConfiguration
@@ -88,13 +102,13 @@
                         KmsKeyArn: !Ref KMSARN         
                 Name: !Sub "${CrawlerName}-Security"
         GlueDatabase:
-            Condition: S3Crawler
+            Condition: isGlueDatabase
             Type: AWS::Glue::Database
             Properties:
                 CatalogId: !Ref AWS::AccountId
                 DatabaseInput:
                     Description: !Sub "glue database for ${ProjectName}"
-                    Name: !Sub '${DATABASENAME}-${ENVIRONMENT}'
+                    Name: !Sub '${DATABASENAME}_${ENVIRONMENT}'
         Classifier:
             Condition: Dataclassifier
             Type: AWS::Glue::Classifier
@@ -102,10 +116,10 @@
                 CsvClassifier:
                     ContainsHeader: PRESENT
                     Delimiter: '|'
-                    Name: PipeClassifier
+                    Name: PipeClassifier-${ENVIRONMENT}-${ProjectName}
                     QuoteSymbol: '"'
         S3rawDataCrawler:
-            Condition: S3Crawler
+            Condition: PlainS3DataCrawler
             Type: AWS::Glue::Crawler
             Properties:
                 Name: !Ref CrawlerName
@@ -123,8 +137,8 @@
                 Tags: 
                     Owner: !Sub '${OWNER} - ${COMPANYNAME}'
                     Environment: !Ref ENVIRONMENT
-        S3DataCrawler:
-            Condition: CDCCrawler
+        CDCCrawler:
+            Condition: CDCTableCrawler
             Type: AWS::Glue::Crawler
             Properties:
                 Name: !Ref CrawlerName
@@ -140,10 +154,73 @@
                     DeleteBehavior: "LOG"
                 Tags: 
                     Owner: !Sub '${OWNER} - ${COMPANYNAME}'
-                    
                     Environment: !Ref ENVIRONMENT
-            
+
+        S3refinedAuditDataCrawler:
+            Condition: RefinedCrawler
+            Type: AWS::Glue::Crawler
+            Properties:
+                Name: !Ref CrawlerName
+                Role: !Ref SERVICEROLEARN
+                DatabaseName: !Ref GlueDatabase
+                CrawlerSecurityConfiguration: !Ref DataSecurityConfiguration
+                Configuration: 
+                  !Sub | 
+                    {
+                    "Version": 1.0,
+                    "Grouping": {
+                    "TableGroupingPolicy": "CombineCompatibleSchemas" }
+                    }
+                Targets: 
+                    S3Targets:
+                        - Path: !Sub '${S3ConnectionInformation}t_baseid/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_survey/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_survey_attribute/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_survey_value/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_tag/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_tag_attribute/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_tag_value/'
+                        - Path: !Sub '${S3ConnectionInformation}t_subscribed_offer/'
+                        - Path: !Sub '${S3ConnectionInformation}t_visited_affiliate/'
+                SchemaChangePolicy:
+                    UpdateBehavior: "UPDATE_IN_DATABASE"
+                    DeleteBehavior: "DEPRECATE_IN_DATABASE"
+                TablePrefix: 'fig_'
+                Tags: 
+                    Owner: !Sub '${OWNER} - ${COMPANYNAME}'
+                    Environment: !Ref ENVIRONMENT
+        S3RefinedUpdatesDataCrawler:
+            Condition: RefinedUpdates
+            Type: AWS::Glue::Crawler
+            Properties:
+                Name: !Ref CrawlerName
+                Role: !Ref SERVICEROLEARN
+                DatabaseName: !Ref GlueDatabase
+                CrawlerSecurityConfiguration: !Ref DataSecurityConfiguration
+                Configuration: 
+                  !Sub | 
+                    {
+                    "Version": 1.0,
+                    "Grouping": {
+                    "TableGroupingPolicy": "CombineCompatibleSchemas" }
+                    }
+                Targets: 
+                    S3Targets:
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_cdc_update/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_survey_cdc_update/'
+                        - Path: !Sub '${S3ConnectionInformation}t_demographic_tag_cdc_update/'
+                SchemaChangePolicy:
+                    UpdateBehavior: "UPDATE_IN_DATABASE"
+                    DeleteBehavior: "DEPRECATE_IN_DATABASE"
+                TablePrefix: 'fig_'
+                Tags: 
+                    Owner: !Sub '${OWNER} - ${COMPANYNAME}'
+                    Environment: !Ref ENVIRONMENT            
     Outputs:
         GlueDatabaseName:
-            Value: !If [S3Crawler, !Ref GlueDatabase, "False"]    
-    
+            Value: !If [isGlueDatabase,!Ref GlueDatabase,"None"]
+        CrawlerName:
+            Value: !If [RefinedCrawler,!Ref S3refinedAuditDataCrawler,!If [PlainS3DataCrawler,!Ref S3rawDataCrawler,"None"]]
+        RefinedUpdatesCrawler:
+          Value: !If [RefinedUpdates, !Ref S3RefinedUpdatesDataCrawler, "None"]

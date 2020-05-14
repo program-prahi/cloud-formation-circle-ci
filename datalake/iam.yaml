@@ -34,12 +34,14 @@ Parameters:
   GlueTempBucketARN:
     Description: Glue Temporary bucket ARN
     Type: String  
- 
+  RefinedBucketARN:
+    Type: String
+    Description: ARN of the Refined bukcet.
 Resources:
   TransientBucketPolicy: 
     Type: AWS::IAM::ManagedPolicy
     Properties: 
-      ManagedPolicyName: !Sub '${COMPANYNAME}-refined-bucket-access-policy'
+      ManagedPolicyName: !Sub '${COMPANYNAME}-transient-bucket-access-policy'
       PolicyDocument: 
         Version: "2012-10-17"
         Statement:
@@ -61,7 +63,31 @@ Resources:
             Effect: Allow
             Resource: 
               - !Ref KmsKeyArn
-        
+  RefinedBucketPolicy: 
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      ManagedPolicyName: !Sub '${COMPANYNAME}-refined-zone-bucket-access-policy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Effect: Allow
+            Resource:
+              - !Ref 'RefinedBucketARN'
+              - !Sub '${RefinedBucketARN}/*'
+          - Action: 
+              - kms:Decrypt  
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Effect: Allow
+            Resource: 
+              - !Ref KmsKeyArn      
   RawBucketPolicy: 
     Type: AWS::IAM::ManagedPolicy
     Properties: 
@@ -232,7 +258,31 @@ Resources:
           Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Raw Crawler'
         - Key: "Environment"
           Value: !Ref ENVIRONMENT
-        
+  AWSGlueRefinedCrawlerRole:
+    Type: AWS::IAM::Role
+    DependsOn: RefinedBucketPolicy
+    Properties:
+      RoleName: !Sub '${COMPANYNAME}-role-glueRefinedCrawler'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - !Ref RefinedBucketPolicy
+        - !Ref KmsAccessPolicy
+        - !Ref CloudwatchLoggingPolicy
+      Tags: 
+        - Key: "Owner"
+          Value: !Sub '${OWNER} - ${COMPANYNAME}'
+        - Key: "Name"
+          Value: !Sub '${COMPANYNAME} - ${AWS::StackName} ${ENVIRONMENT} Role Refined Crawler'
+        - Key: "Environment"
+          Value: !Ref ENVIRONMENT      
 
   AWSGlueJobRoleEtl:
     Type: AWS::IAM::Role
@@ -265,6 +315,12 @@ Resources:
                   - !Sub '${TransientBucketARN}/*'
                   - !Sub '${RawBucketARN}/*'
                   - !Sub '${GlueTempBucketARN}/*'
+                  - !Sub '${RefinedBucketARN}/*'
+              - Action: 
+                  - sns:Publish
+                Effect: Allow
+                Resource: 
+                  - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole    
         - !Ref TransientBucketPolicy
@@ -273,6 +329,7 @@ Resources:
         - !Ref GlueTempBucketPolicy
         - !Ref CloudwatchLoggingPolicy
         - !Ref InvokeLambdaPolicy
+        - !Ref RefinedBucketPolicy
       Tags: 
         - Key: "Owner"
           Value: !Sub '${OWNER} - ${COMPANYNAME}'
@@ -314,3 +371,5 @@ Outputs:
       Value: !GetAtt AWSGlueRawCrawlerRole.Arn
     AWSGlueTransientCrawlerRoleArn:
       Value: !GetAtt AWSGlueTransientCrawlerRole.Arn
+    AWSGlueRefinedCrawlerRoleArn:
+      Value: !GetAtt AWSGlueRefinedCrawlerRole.Arn

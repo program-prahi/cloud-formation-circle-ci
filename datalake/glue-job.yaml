@@ -51,9 +51,64 @@
         ProjectName:
             Type: String
             Description: Name of the project
-            Default: datalake            
-
+            Default: datalake
+        FirstSource:
+            Type: String
+            Description: Source of the Data
+            Default: None           
+        TypeOfJob:
+            Type: String
+            Description: Type of the Glue Job
+            AllowedValues:
+                - plain
+                - cdc
+                - plain_refined
+            Default: plain
+        TypeOfOperation:
+            Type: String
+            Description: Operation type of CDC Job
+            AllowedValues:
+                - update
+                - insert
+            Default: insert
+        SnsArn:
+            Type: String
+            Default: "None"
+        WORKFLOWID:
+            Type: String
+            Default: "None"
+        DpuCount:
+            Type: Number
+            Default: 30
+        WorkerType:
+            Type: String
+            AllowedValues:
+                - Standard
+                - G.1X
+                - G.2X
+            Default: Standard
     
+    Conditions:
+        CDCJob: !Equals
+            - !Ref TypeOfJob
+            - cdc
+        CDCUpdateOperation: !Equals
+            - !Ref TypeOfOperation
+            - update
+        PlainRefinedJob: !Equals
+            - !Ref TypeOfJob
+            - plain_refined
+        PlainJob: !Equals
+            - !Ref TypeOfJob
+            - plain
+        NonStandardWorker: !Or
+          - !Equals  
+            - !Ref WorkerType   
+            - G.1X
+          - !Equals
+            - !Ref TypeofZone
+            - G.2X
+
     Resources:
         DataSecurityConfiguration:
             Type: AWS::Glue::SecurityConfiguration
@@ -65,7 +120,6 @@
                     CloudWatchEncryption:
                         CloudWatchEncryptionMode: SSE-KMS
                         KmsKeyArn: !Ref KMSARN  
-                         
                 Name: !Sub "${NAME}-Security"
         
         GlueJob:
@@ -79,7 +133,7 @@
                     ScriptLocation: !Ref ScriptPath
                 DefaultArguments: {
                         "--TempDir": !Ref TempDirectory,
-                        "--job-bookmark-option": "job-bookmark-disable",
+                        "--job-bookmark-option": !If [PlainJob, job-bookmark-disable, job-bookmark-enable],
                         "--job-language": "python",
                         "--enable-metrics": "true",
                         "--enable-continuous-cloudwatch-log": "true",
@@ -88,9 +142,16 @@
                         "--input_database": !Ref InputDatabase,
                         "--input_table": !Ref InputTable,
                         "--output_bucket": !Ref OutputBucket,
-                        "--output_path": !Ref OutputPath
+                        "--output_path": !Ref OutputPath,
+                        "--sns_arn": !Ref SnsArn,
+                        "--first_source": !If [PlainRefinedJob,!Ref FirstSource,None],
+                        "--GLUE_ROLE": !If [PlainRefinedJob,!Ref AWSGlueJobRole,None],
+                        "--WORKFLOW_ID": !Ref WORKFLOWID,
+                        "--operation": !If [CDCJob,!If [CDCUpdateOperation,"update","insert"],None]
                     }
-                MaxCapacity: 10
+                MaxCapacity: !If [NonStandardWorker, None, !Ref DpuCount]
+                WorkerType: !Ref WorkerType
+                NumberOfWorkers: !If [NonStandardWorker, 30, None]
                 Name: !Sub '${ProjectName}-${ENVIRONMENT}-${NAME}' 
                 MaxRetries: 0
                 Description: !Sub 'Glue Job ${NAME} for ${COMPANYNAME} that reads from ${ScriptPath}'

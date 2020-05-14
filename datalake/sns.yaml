@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3 Bucket with Inventory and Analytics Configurations
+Parameters: 
+  TOPICNAME: 
+    Type: String
+    Default: glue-workflow-status
+    Description: The name of the Topic you want to create
+  DISPLAYNAME: 
+    Type: String
+    Default: glue-workflow-sns-Status
+    Description: The name to display on notifications
+  KMSKEYID:
+    Type: String
+    Description: Id of the KMS key to encrypt the uploaded files
+  COMPANYNAME: 
+      AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
+      ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
+      Default: fluent
+      Description: "S3 bucket naming conventions for the company the stuff is all for"
+      Type: String  
+  OWNER:
+      Type: String
+      Default: Jacob Puthuparambil 
+      Description: enter the 'owner' tag value
+  ENVIRONMENT: 
+      Type: String    
+      AllowedValues:
+      - dev
+      - staging
+      - qa
+      - production
+  ProjectName:
+    Type: String
+    Description: Name of the project
+    Default: datalake
+  EmailID:
+    Type: String
+  
+Resources:
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Ref DISPLAYNAME
+      KmsMasterKeyId: !Ref KMSKEYID
+      TopicName: !Ref TOPICNAME
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+        Endpoint: !Ref EmailID
+        Protocol: email
+        TopicArn: !Ref 'SnsTopic'
+  SnsTopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+        PolicyDocument:
+            Version: "2012-10-17"
+            Id: !Sub "sns_${ENVIRONMENT}__default_policy"
+            Statement:
+                - 
+                    Sid: "default publish policy"
+                    Effect: Allow
+                    Principal: '*'
+                    Condition: 
+                        StringEquals: 
+                            AWS:SourceAccount: !Ref AWS::AccountId
+                    Action: 
+                        - sns:Publish
+                    Resource: !Ref SnsTopic
+                - 
+                    Sid: "lambda-allow-publish"
+                    Effect: "Allow"
+                    Principal: 
+                        Service:
+                            - "lambda.amazonaws.com"
+                    Action:
+                        - sns:Publish
+                    Resource: "*"
+        Topics:
+            - !Ref SnsTopic
+Outputs: 
+    TopicArn: 
+        Description: 'Topic Arn'
+        Value: !Ref SnsTopic
