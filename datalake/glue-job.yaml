@@ -71,6 +71,9 @@
                 - update
                 - insert
             Default: insert
+        TypeofZone:
+            Type: String
+            Default: "Dummy"
         SnsArn:
             Type: String
             Default: "None"
@@ -106,7 +109,7 @@
             - !Ref WorkerType   
             - G.1X
           - !Equals
-            - !Ref TypeofZone
+            - !Ref WorkerType
             - G.2X
 
     Resources:
