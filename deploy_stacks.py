@@ -94,7 +94,6 @@ def describe_stacks():
     response = cf_client.describe_stacks(StackName=stack_name)
     time.sleep(10)
     if response['Stacks'][0]['StackStatus'] == 'CREATE_IN_PROGRESS':
-        print(response['Stacks'][0]['StackStatus'])
         describe_stacks()
     elif response['Stacks'][0]['StackStatus'] == 'CREATE_COMPLETE':
         exit(0)

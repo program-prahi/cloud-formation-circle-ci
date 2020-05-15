@@ -12,7 +12,7 @@
         "ParameterKey": "PublicSubnet2CIDR"
     },
     {
-        "ParameterValue": "dms.c4.4xlarge",
+        "ParameterValue": "dms.c4.2xlarge",
         "ParameterKey": "ReplicationInstanceClass"
     },
     {
@@ -24,7 +24,7 @@
         "ParameterKey": "OWNER"
     },
     {
-        "ParameterValue": "dev",
+        "ParameterValue": "qa",
         "ParameterKey": "ENVIRONMENT"
     },
     {
@@ -44,11 +44,11 @@
         "ParameterKey": "CodaS3BucketName"
     },
     {
-        "ParameterValue": "fluent_dev_filu_db_raw_t",
+        "ParameterValue": "fluent_filu_db_raw",
         "ParameterKey": "RawInputDatabaseName"
     },
     {
-        "ParameterValue": "fluent_dev_filu_db_transient_t",
+        "ParameterValue": "fluent_filu_db_transient",
         "ParameterKey": "TransientInputDatabaseName"
     },
     {
@@ -56,7 +56,7 @@
         "ParameterKey": "CodaS3KeyPrefix"
     },
     {
-        "ParameterValue": "dsh48",
+        "ParameterValue": "datalake",
         "ParameterKey": "ProjectName"
     },
     {
@@ -81,6 +81,6 @@
     },
     {
         "ParameterKey": "RefinedInputDatabaseName",
-        "ParameterValue": "fluent_dev_filu_db_refined"
+        "ParameterValue": "fluent_filu_db_refined"
     }
 ]

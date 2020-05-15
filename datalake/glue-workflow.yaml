@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: DataLake Creation
+Description: Creates a glue workflow
 Parameters:
       WorkflowName:
         Type: String

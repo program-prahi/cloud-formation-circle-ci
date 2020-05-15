@@ -1,3 +1,19 @@
+######################################################################################################
+#
+#   Company Name:   Fluent - ETL
+#   Created By:     Hariharan Krishnamurthi - Coda Global
+#       
+#   Description:    Starts the Transient to Refined Workflow on a successful cdc-workflow condition
+#
+#   Input parameters requrired: 
+#   AWS_REGION,WORKFLOW_ID
+#
+#    Example: 
+#      AWS_REGION = 'us-east-1'
+#      WORKFLOW_ID = 'dev-datalake-dev-transient-to-refined'
+#
+#######################################################################################################
+
 # Libraries Configurations Section
 import sys
 from awsglue.transforms import *

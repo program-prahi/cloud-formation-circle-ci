@@ -1,3 +1,22 @@
+######################################################################################################
+#
+#   Company Name:   Fluent - ETL
+#   Created By:     Prahathish Kameswaran - Coda Global
+#       
+#   Description:    ETL that exports CDC files in RawZone to TransientZone
+#
+#   Input parameters requrired: 
+#   input_database, input_table, output_bucket, output_path
+#
+#    Example: 
+# # Configuration Variables - Crawler Catalog
+#   input_database = "fluent_dev_kinesis_delivery_database"
+#   input_table = "fluent_dev_cdc_table"
+#   output_bucket = "fluent-dev-datalake-transient-dev-394780878318"
+#   output_path = "FILU"
+#   operation = "insert"
+#
+#######################################################################################################
 import sys
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
@@ -64,7 +83,6 @@ else:
     output_path = args['output_path']
     operation = args['operation']
 
-temp_dir = args['TempDir']
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(output_bucket)
 

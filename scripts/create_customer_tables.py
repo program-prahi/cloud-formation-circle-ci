@@ -1,3 +1,24 @@
+######################################################################################################
+#
+#   Company Name:   Fluent - ETL
+#   Created By:     Prahathish Kameswaran - Coda Global
+#       
+#   Description:    ETL Job that creates Customer views out of Fuzzy-match Deduped Tables, Demographic and Base Id
+#
+#   Input parameters requrired: 
+#   fuzzy_match_database, fuzzy_match_table,refined_database, output_bucket, output_path, GLUE_ROLE, first_source
+#
+#    Example: 
+# # Configuration Variables - Crawler Catalog
+#   fuzzy_match_database = "fluent_dev_filu_db_transient_dev"
+#   fuzzy_match_table = "customer_data_10_email_deduped_run_2_output"
+#   refined_database = "fluent_dev_filu_db_refined_dev"
+#   GLUE_ROLE = "arn:aws:iam::394780878318:role/fluent-role-glueEtlJob"  
+#   output_bucket = "fluent-dev-datalake-refined-dev-394780878318"
+#   output_path = "FIGAudit/FIG"
+#   first_source = "FILU" 
+#
+#######################################################################################################
 import sys
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext

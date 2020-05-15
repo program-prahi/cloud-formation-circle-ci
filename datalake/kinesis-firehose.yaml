@@ -169,10 +169,7 @@ Resources :
                 - 
                     Effect: "Allow"
                     Action: 
-                        - "kinesis:ListStreams"
-                        - "kinesis:DescribeStream"
-                        - "kinesis:GetShardIterator"
-                        - "kinesis:GetRecords"
+                        - "kinesis:*"
                     Resource: 
                         - !Ref KinesisStreamARN
                 - 

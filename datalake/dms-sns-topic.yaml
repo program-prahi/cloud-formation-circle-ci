@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: S3 Bucket with Inventory and Analytics Configurations
+Description: SNS topic to listen the DMS tasks.
 Parameters: 
   TOPICNAME: 
     Type: String

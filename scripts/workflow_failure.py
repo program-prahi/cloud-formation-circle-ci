@@ -1,3 +1,18 @@
+######################################################################################################
+#
+#   Company Name:   Fluent - ETL
+#   Created By:     Hariharan Krishnamurthi - Coda Global
+#       
+#   Description:    Sends a SNS Notification that there is a Failure in Workflow operation
+#
+#   Input parameters requrired: 
+#   AWS_REGION,sns_arn
+#
+#    Example: 
+#      AWS_REGION = 'us-east-1'
+#      sns_arn = 'arn:aws:sns:us-east-1:394780878318:dev-datalake-dev-sns-workflow-topic'
+#
+#######################################################################################################
 # Libraries Configurations Section
 import sys
 from awsglue.transforms import *

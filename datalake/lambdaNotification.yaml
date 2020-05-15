@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AWS CloudFormation template to send SNS topic to an arn.
+Description: Lambda function to trigger DMS CDC task and glue workflow.
 Parameters: 
   GlueWorkflowName:
     Type: String

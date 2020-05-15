@@ -1,3 +1,24 @@
+######################################################################################################
+#
+#   Company Name:   Fluent - ETL
+#   Created By:     Prahathish Kameswaran - Coda Global
+#       
+#   Description:    ETL that exports Files in Transient Zone to Refined Zone
+#
+#   Input parameters requrired: 
+#   input_database, input_table, output_bucket, output_path, GLUE_ROLE, first_source
+#
+#    Example: 
+# # Configuration Variables - Crawler Catalog
+#   input_database = "fluent_dev_filu_db_transient_dev"
+#   input_table = "t_demographic"
+#   GLUE_ROLE = "arn:aws:iam::394780878318:role/fluent-role-glueEtlJob"  
+#   output_bucket = "fluent-dev-datalake-refined-dev-394780878318"
+#   output_path = "FIGAudit/FIG"
+#   first_source = "FILU" 
+#
+#######################################################################################################
+
 import sys
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
@@ -70,10 +91,13 @@ else:
     glue_role = args['GLUE_ROLE']
 ###################################################
 # Create Audit Columns for each Table - 
-# create_date : Date
-# create_timestamp: timestamp
+# created_date : Date
+# create_timestamp: timestamp (UTC)
 # create_user: string (IAM User created the table)
-# first_source: string (Data Source)
+# first_source: string (Data Source-'FILU')
+# create_year: integer (Partioned)
+# create_month: integer (Partioned)
+# create_date: integer (Partitioned)
 ###################################################
 def create_audit_columns(dataframe):
     frame = dataframe.withColumn("created_date",F.current_date()) \

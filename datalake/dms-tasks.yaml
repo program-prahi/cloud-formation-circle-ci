@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'DMS: Replication Tasks.'
+Description: Full load with SNS event subscription and CDC task.
 Parameters: 
   ENVIRONMENT: 
     Type: String    

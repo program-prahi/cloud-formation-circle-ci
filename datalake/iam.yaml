@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: AWS CloudFormation template to create IAM roles.
+Description: AWS CloudFormation template to create IAM roles for glue roles.
 Parameters:
   TransientBucketARN:
     Description: Transient bucket ARN

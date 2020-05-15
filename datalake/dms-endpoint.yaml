@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Creates a source endpoint and 2 target endpoint with IAM roles and appropriate IAM policies 
+Description: Creates a source endpoint and 2 target endpoint with IAM roles and appropriate IAM policies. 
 Parameters: 
   ENVIRONMENT: 
     Type: String    

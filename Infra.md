@@ -2,9 +2,8 @@
 
 This repo will allow you completely create a data lake in S3.  It consists of a series of top level CloudFormation templates. The template `datalake.yaml` at the current level is the parent template to be run in CloudFormation.  The templates under the `./datalake/` path are components to make nested stacks. Those templates are called from the current level `datalake.yaml` templates and never directly.
 
-
-
-![](../assets/force-system.png)
+## Datalake Architecture
+![](./assets/Fluent-Data-Lake-Phase-I-Architecture.png)
 
 ## Datalake Infrastructure
 
