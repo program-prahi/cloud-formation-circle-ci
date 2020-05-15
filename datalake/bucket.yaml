@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
-Description: S3 Bucket 
+Description: Creates a S3 Bucket 
 Parameters: 
   BUCKETNAME:
     Type: String

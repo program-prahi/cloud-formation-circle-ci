@@ -95,12 +95,6 @@ Parameters:
           Type: String
           Description: Name of the Database
           Default: FILU
-      # CDCScriptPath:
-      #     Type: String
-      #     Description: Script path of the CDC Glue Job.
-      # ScriptPath: 
-      #     Type: String
-      #     Description: The S3 location of the plain etl glue Job script Path
       RawInputDatabaseName: 
           Type: String
           Description: The database name for the input of the job
@@ -415,7 +409,7 @@ Resources:
                 - ''
                 - - 's3://'
                   - !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-                  - '/FILU_Update/'
+                  - '/FIG_Update/'
               TypeofZone: refined_updates
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
       Type: AWS::CloudFormation::Stack
@@ -785,6 +779,8 @@ Resources:
                 COMPANYNAME: !Ref 'COMPANYNAME'
                 OWNER: !Ref 'OWNER'
                 ProjectName: !Ref ProjectName
+                CodaS3BucketName: !Ref CodaS3BucketName
+                LambdaScriptPath: scripts/full-load-glue-lambda.zip
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}lambdaNotification.yaml'
         Type: AWS::CloudFormation::Stack
     ProcessingCDCWorkflow:

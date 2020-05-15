@@ -29,6 +29,16 @@ Parameters:
     Default: datalake    
   SNSTopic:
     Type: String    
+  CodaS3BucketName:
+    Default: fluent-datalake-templates-dev-394780878318
+    Description: "S3 bucket where the Quick Start templates and scripts are installed.\
+      \ Use this parameter to specify the S3 bucket name you\u2019ve created for your\
+      \ copy of Quick Start assets, if you decide to customize or extend the Quick\
+      \ Start for your own use. The bucket name can include numbers, lowercase letters,\
+      \ uppercase letters, and hyphens, but should not start or end with a hyphen."
+    Type: String
+  LambdaScriptPath:
+    Type: String
 
 Resources:
   NotificationLambda:
@@ -36,8 +46,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${ProjectName}-${ENVIRONMENT}-notification-lambda'
       Code: 
-        S3Bucket: fluent-datalake-templates-dev-394780878318
-        S3Key: scripts/full-load-glue-lambda.zip
+        S3Bucket: !Ref CodaS3BucketName
+        S3Key: !Ref LambdaScriptPath
       Handler: "full-load-glue-lambda.lambda_handler"
       Timeout: 50
       Role: !GetAtt "LambdaRole.Arn"
