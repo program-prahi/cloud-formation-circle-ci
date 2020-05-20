@@ -352,26 +352,26 @@ Resources:
               TypeofZone: transient
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
       Type: AWS::CloudFormation::Stack
-    TransientS3CrawlerUpdates:
-      Properties:
-          Parameters:
-              CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-transient-updates-Crawler'
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              DATABASENAME: !Sub '${TransientInputDatabaseName}_cdc_updates'
-              SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueTransientCrawlerRoleArn'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              TypeOfConnectionToCrawl: s3
-              S3ConnectionInformation: !Join
-                - ''
-                - - 's3://'
-                  - !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                  - '/FILU_Update/'
-              TypeofZone: transient
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
-      Type: AWS::CloudFormation::Stack
+    # TransientS3CrawlerUpdates:
+    #   Properties:
+    #       Parameters:
+    #           CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-transient-updates-Crawler'
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           DATABASENAME: !Sub '${TransientInputDatabaseName}_cdc_updates'
+    #           SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueTransientCrawlerRoleArn'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           TypeOfConnectionToCrawl: s3
+    #           S3ConnectionInformation: !Join
+    #             - ''
+    #             - - 's3://'
+    #               - !GetAtt 'TransientBucket.Outputs.S3BucketName'
+    #               - '/FILU_Update/'
+    #           TypeofZone: transient
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
+    #   Type: AWS::CloudFormation::Stack
     
     RefinedS3Crawler:
       Properties:
@@ -393,26 +393,26 @@ Resources:
               TypeofZone: refined
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
       Type: AWS::CloudFormation::Stack
-    RefinedS3CrawlerUpdates:
-      Properties:
-          Parameters:
-              CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-refined-updates-Crawler'
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              DATABASENAME: !Sub '${RefinedInputDatabaseName}_update'
-              SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueRefinedCrawlerRoleArn'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              TypeOfConnectionToCrawl: s3
-              S3ConnectionInformation: !Join
-                - ''
-                - - 's3://'
-                  - !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-                  - '/FIG_Update/'
-              TypeofZone: refined_updates
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
-      Type: AWS::CloudFormation::Stack
+    # RefinedS3CrawlerUpdates:
+    #   Properties:
+    #       Parameters:
+    #           CrawlerName: !Sub '${ProjectName}-${ENVIRONMENT}-refined-updates-Crawler'
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           DATABASENAME: !Sub '${RefinedInputDatabaseName}_update'
+    #           SERVICEROLEARN: !GetAtt 'GlueRole.Outputs.AWSGlueRefinedCrawlerRoleArn'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           TypeOfConnectionToCrawl: s3
+    #           S3ConnectionInformation: !Join
+    #             - ''
+    #             - - 's3://'
+    #               - !GetAtt 'BucketsRefined.Outputs.S3BucketName'
+    #               - '/FIG_Update/'
+    #           TypeofZone: refined_updates
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
+    #   Type: AWS::CloudFormation::Stack
     # CDCCrawler:
     #   Properties:
     #       Parameters:
@@ -460,36 +460,36 @@ Resources:
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
       Type: AWS::CloudFormation::Stack
 
-    CDCUpdateGlueJob: 
-      Properties: 
-          Parameters: 
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              NAME: cdc-update-job
-              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              ScriptPath: !Join
-                - ''  
-                - - 's3://'
-                  - !Ref 'CodaS3BucketName'
-                  - '/scripts/ingest_cdc_raw_to_transient.py' 
-              TempDirectory: !Join
-                - ''
-                - - 's3://'
-                  - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
-                  - '/temp-dir'
-              InputDatabase: !GetAtt 'KinesisFirehose.Outputs.DBName'
-              InputTable: !GetAtt 'KinesisFirehose.Outputs.TableName'
-              OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-              OutputPath: FILU_Update
-              TypeOfJob: cdc
-              TypeOfOperation: update
-              WorkerType: Standard
-              DpuCount: 20               
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
-      Type: AWS::CloudFormation::Stack
+    # CDCUpdateGlueJob: 
+    #   Properties: 
+    #       Parameters: 
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           NAME: cdc-update-job
+    #           AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           ScriptPath: !Join
+    #             - ''  
+    #             - - 's3://'
+    #               - !Ref 'CodaS3BucketName'
+    #               - '/scripts/ingest_cdc_raw_to_transient.py' 
+    #           TempDirectory: !Join
+    #             - ''
+    #             - - 's3://'
+    #               - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+    #               - '/temp-dir'
+    #           InputDatabase: !GetAtt 'KinesisFirehose.Outputs.DBName'
+    #           InputTable: !GetAtt 'KinesisFirehose.Outputs.TableName'
+    #           OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
+    #           OutputPath: FILU_Update
+    #           TypeOfJob: cdc
+    #           TypeOfOperation: update
+    #           WorkerType: Standard
+    #           DpuCount: 20               
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+    #   Type: AWS::CloudFormation::Stack
 
     tdemographicsurveyGlueJob: 
       Properties: 
@@ -890,45 +890,45 @@ Resources:
             - start-cdc-job
         Actions:
           - JobName: !GetAtt CDCGlueJob.Outputs.GlueJob
-          - JobName: !GetAtt CDCUpdateGlueJob.Outputs.GlueJob
+          # - JobName: !GetAtt CDCUpdateGlueJob.Outputs.GlueJob
         Tags:
           WorkflowName: !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId'
           ENVIRONMENT: !Ref 'ENVIRONMENT'
           COMPANYNAME: !Ref 'COMPANYNAME'
           OWNER: !Ref 'OWNER'
-    TransientUpdateTrigger:
-      Type: AWS::Glue::Trigger
-      DependsOn:
-        - ProcessingCDCWorkflow
-        - ProcessingWorkflow
-        - ImportRawDataTrigger
-        - CDCJobTrigger
-        - TransientCrawlerTrigger
-      Properties:
-        Type: CONDITIONAL
-        Description: !Join 
-        - ''
-        - - 'Starts the ' 
-          - !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId' 
-          - ' transient updates crawler'
-        WorkflowName: !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId'    
-        StartOnCreation: true 
-        Name: !Join
-          - '-'
-          - - !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId' 
-            - start-transient-update-crawler
-        Predicate:
-          Conditions:
-              - LogicalOperator: EQUALS
-                JobName: !GetAtt CDCUpdateGlueJob.Outputs.GlueJob
-                State: SUCCEEDED
-        Actions:
-          - CrawlerName: !GetAtt TransientS3CrawlerUpdates.Outputs.CrawlerName
-        Tags:
-          WorkflowName: !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId'
-          ENVIRONMENT: !Ref 'ENVIRONMENT'
-          COMPANYNAME: !Ref 'COMPANYNAME'
-          OWNER: !Ref 'OWNER'
+    # TransientUpdateTrigger:
+    #   Type: AWS::Glue::Trigger
+    #   DependsOn:
+    #     - ProcessingCDCWorkflow
+    #     - ProcessingWorkflow
+    #     - ImportRawDataTrigger
+    #     - CDCJobTrigger
+    #     - TransientCrawlerTrigger
+    #   Properties:
+    #     Type: CONDITIONAL
+    #     Description: !Join 
+    #     - ''
+    #     - - 'Starts the ' 
+    #       - !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId' 
+    #       - ' transient updates crawler'
+    #     WorkflowName: !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId'    
+    #     StartOnCreation: true 
+    #     Name: !Join
+    #       - '-'
+    #       - - !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId' 
+    #         - start-transient-update-crawler
+    #     Predicate:
+    #       Conditions:
+    #           - LogicalOperator: EQUALS
+    #             JobName: !GetAtt CDCUpdateGlueJob.Outputs.GlueJob
+    #             State: SUCCEEDED
+    #     Actions:
+    #       - CrawlerName: !GetAtt TransientS3CrawlerUpdates.Outputs.CrawlerName
+    #     Tags:
+    #       WorkflowName: !GetAtt 'ProcessingCDCWorkflow.Outputs.WorkflowId'
+    #       ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #       COMPANYNAME: !Ref 'COMPANYNAME'
+    #       OWNER: !Ref 'OWNER'
     TransientCrawlerTrigger:
       Type: AWS::Glue::Trigger
       DependsOn:
@@ -1069,9 +1069,9 @@ Resources:
                     - LogicalOperator: EQUALS
                       CrawlerName: !GetAtt TransientS3Crawler.Outputs.CrawlerName
                       CrawlState: SUCCEEDED
-                    - LogicalOperator: EQUALS
-                      CrawlerName: !GetAtt TransientS3CrawlerUpdates.Outputs.CrawlerName
-                      CrawlState: SUCCEEDED
+                    # - LogicalOperator: EQUALS
+                    #   CrawlerName: !GetAtt TransientS3CrawlerUpdates.Outputs.CrawlerName
+                    #   CrawlState: SUCCEEDED
             Actions:
               - JobName: !GetAtt ProcessingRefinedWkflowKickoffJob.Outputs.GlueJob
             Tags:
@@ -1158,9 +1158,9 @@ Resources:
           - tdemographictagvalueRefinedGlueJob
           - tsubscribedofferRefinedGlueJob
           - tvisitedaffiliateRefinedGlueJob
-          - tdemographicupdatesGlueJob
-          - tdemographictagupdatesGlueJob
-          - tdemographicsurveyupdatesGlueJob
+          # - tdemographicupdatesGlueJob
+          # - tdemographictagupdatesGlueJob
+          # - tdemographicsurveyupdatesGlueJob
         Properties:
             Type: ON_DEMAND
             Description: !Join
@@ -1185,9 +1185,9 @@ Resources:
               - JobName: !GetAtt tdemographictagvalueRefinedGlueJob.Outputs.GlueJob
               - JobName: !GetAtt tsubscribedofferRefinedGlueJob.Outputs.GlueJob
               - JobName: !GetAtt tvisitedaffiliateRefinedGlueJob.Outputs.GlueJob
-              - JobName: !GetAtt 'tdemographicupdatesGlueJob.Outputs.GlueJob'
-              - JobName: !GetAtt 'tdemographictagupdatesGlueJob.Outputs.GlueJob'
-              - JobName: !GetAtt 'tdemographicsurveyupdatesGlueJob.Outputs.GlueJob'
+              # - JobName: !GetAtt 'tdemographicupdatesGlueJob.Outputs.GlueJob'
+              # - JobName: !GetAtt 'tdemographictagupdatesGlueJob.Outputs.GlueJob'
+              # - JobName: !GetAtt 'tdemographicsurveyupdatesGlueJob.Outputs.GlueJob'
             Tags:
                 WorkflowName: !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
                 ENVIRONMENT: !Ref 'ENVIRONMENT'
@@ -1251,42 +1251,42 @@ Resources:
               COMPANYNAME: !Ref 'COMPANYNAME'
               OWNER: !Ref 'OWNER'
 
-    RefinedUpdatesCrawlerKickoffTrigger:
-      Type: AWS::Glue::Trigger
-      DependsOn:
-        - ImportTransientToRefinedTrigger
-        - RefinedS3CrawlerUpdates
-      Properties:
-          Type: CONDITIONAL
-          Description: !Join
-              - ''
-              - - 'Starts the '
-                - !GetAtt 'RefinedS3CrawlerUpdates.Outputs.CrawlerName'
-          WorkflowName: !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
-          StartOnCreation: 'true'
-          Name: !Join
-              - '-'
-              - - !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
-                - refined-update-crawler-trigger
-          Predicate:
-              Logical: AND
-              Conditions:
-                - LogicalOperator: EQUALS
-                  JobName: !GetAtt 'tdemographicupdatesGlueJob.Outputs.GlueJob'
-                  State: SUCCEEDED
-                - LogicalOperator: EQUALS
-                  JobName: !GetAtt 'tdemographictagupdatesGlueJob.Outputs.GlueJob'
-                  State: SUCCEEDED
-                - LogicalOperator: EQUALS
-                  JobName: !GetAtt 'tdemographicsurveyupdatesGlueJob.Outputs.GlueJob'
-                  State: SUCCEEDED
-          Actions:
-              - CrawlerName: !GetAtt 'RefinedS3CrawlerUpdates.Outputs.RefinedUpdatesCrawler'
-          Tags:
-              WorkflowName: !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
+    # RefinedUpdatesCrawlerKickoffTrigger:
+    #   Type: AWS::Glue::Trigger
+    #   DependsOn:
+    #     - ImportTransientToRefinedTrigger
+    #     - RefinedS3CrawlerUpdates
+    #   Properties:
+    #       Type: CONDITIONAL
+    #       Description: !Join
+    #           - ''
+    #           - - 'Starts the '
+    #             - !GetAtt 'RefinedS3CrawlerUpdates.Outputs.CrawlerName'
+    #       WorkflowName: !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
+    #       StartOnCreation: 'true'
+    #       Name: !Join
+    #           - '-'
+    #           - - !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
+    #             - refined-update-crawler-trigger
+    #       Predicate:
+    #           Logical: AND
+    #           Conditions:
+    #             - LogicalOperator: EQUALS
+    #               JobName: !GetAtt 'tdemographicupdatesGlueJob.Outputs.GlueJob'
+    #               State: SUCCEEDED
+    #             - LogicalOperator: EQUALS
+    #               JobName: !GetAtt 'tdemographictagupdatesGlueJob.Outputs.GlueJob'
+    #               State: SUCCEEDED
+    #             - LogicalOperator: EQUALS
+    #               JobName: !GetAtt 'tdemographicsurveyupdatesGlueJob.Outputs.GlueJob'
+    #               State: SUCCEEDED
+    #       Actions:
+    #           - CrawlerName: !GetAtt 'RefinedS3CrawlerUpdates.Outputs.RefinedUpdatesCrawler'
+    #       Tags:
+    #           WorkflowName: !GetAtt 'ProcessingRefinedWorkflow.Outputs.WorkflowId'
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
 
     tbaseidRefinedGlueJob: 
         Properties: 
@@ -1587,90 +1587,90 @@ Resources:
                 DpuCount: 50                
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
-    tdemographicsurveyupdatesGlueJob: 
-      Properties: 
-          Parameters: 
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              NAME: t_demographic_survey_update_job
-              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              ScriptPath: !Join
-              - ''  
-              - - 's3://'
-                - !Ref 'CodaS3BucketName'
-                - '/scripts/ingest_plain_transient_to_refined.py'
-              TempDirectory: !Join
-              - ''
-              - - 's3://'
-                - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
-                - '/temp-dir'
-              InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
-              InputTable: t_demographic_survey_cdc_update
-              OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-              OutputPath: FIG_Update
-              TypeOfJob: plain_refined
-              FirstSource: FILU
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
-      Type: AWS::CloudFormation::Stack
-    tdemographicupdatesGlueJob: 
-      Properties: 
-          Parameters: 
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              NAME: t_demographic_update_job
-              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              ScriptPath: !Join
-              - ''  
-              - - 's3://'
-                - !Ref 'CodaS3BucketName'
-                - '/scripts/ingest_plain_transient_to_refined.py'
-              TempDirectory: !Join
-              - ''
-              - - 's3://'
-                - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
-                - '/temp-dir'
-              InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
-              InputTable: t_demographic_cdc_update
-              OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-              OutputPath: FIG_Update
-              TypeOfJob: plain_refined
-              FirstSource: FILU
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
-      Type: AWS::CloudFormation::Stack
-    tdemographictagupdatesGlueJob: 
-      Properties: 
-          Parameters: 
-              ENVIRONMENT: !Ref 'ENVIRONMENT'
-              COMPANYNAME: !Ref 'COMPANYNAME'
-              OWNER: !Ref 'OWNER'
-              ProjectName: !Ref ProjectName
-              NAME: t_demographic_tag_update_job
-              AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
-              KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
-              ScriptPath: !Join
-              - ''  
-              - - 's3://'
-                - !Ref 'CodaS3BucketName'
-                - '/scripts/ingest_plain_transient_to_refined.py'
-              TempDirectory: !Join
-              - ''
-              - - 's3://'
-                - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
-                - '/temp-dir'
-              InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
-              InputTable: t_demographic_tag_cdc_update
-              OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-              OutputPath: FIG_Update
-              TypeOfJob: plain_refined
-              FirstSource: FILU
-          TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
-      Type: AWS::CloudFormation::Stack
+    # tdemographicsurveyupdatesGlueJob: 
+    #   Properties: 
+    #       Parameters: 
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           NAME: t_demographic_survey_update_job
+    #           AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           ScriptPath: !Join
+    #           - ''  
+    #           - - 's3://'
+    #             - !Ref 'CodaS3BucketName'
+    #             - '/scripts/ingest_plain_transient_to_refined.py'
+    #           TempDirectory: !Join
+    #           - ''
+    #           - - 's3://'
+    #             - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+    #             - '/temp-dir'
+    #           InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
+    #           InputTable: t_demographic_survey_cdc_update
+    #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
+    #           OutputPath: FIG_Update
+    #           TypeOfJob: plain_refined
+    #           FirstSource: FILU
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+    #   Type: AWS::CloudFormation::Stack
+    # tdemographicupdatesGlueJob: 
+    #   Properties: 
+    #       Parameters: 
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           NAME: t_demographic_update_job
+    #           AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           ScriptPath: !Join
+    #           - ''  
+    #           - - 's3://'
+    #             - !Ref 'CodaS3BucketName'
+    #             - '/scripts/ingest_plain_transient_to_refined.py'
+    #           TempDirectory: !Join
+    #           - ''
+    #           - - 's3://'
+    #             - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+    #             - '/temp-dir'
+    #           InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
+    #           InputTable: t_demographic_cdc_update
+    #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
+    #           OutputPath: FIG_Update
+    #           TypeOfJob: plain_refined
+    #           FirstSource: FILU
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+    #   Type: AWS::CloudFormation::Stack
+    # tdemographictagupdatesGlueJob: 
+    #   Properties: 
+    #       Parameters: 
+    #           ENVIRONMENT: !Ref 'ENVIRONMENT'
+    #           COMPANYNAME: !Ref 'COMPANYNAME'
+    #           OWNER: !Ref 'OWNER'
+    #           ProjectName: !Ref ProjectName
+    #           NAME: t_demographic_tag_update_job
+    #           AWSGlueJobRole: !GetAtt 'GlueRole.Outputs.glueEtlJobRoleARN'
+    #           KMSARN: !GetAtt 'KmsKey.Outputs.KeyArn'
+    #           ScriptPath: !Join
+    #           - ''  
+    #           - - 's3://'
+    #             - !Ref 'CodaS3BucketName'
+    #             - '/scripts/ingest_plain_transient_to_refined.py'
+    #           TempDirectory: !Join
+    #           - ''
+    #           - - 's3://'
+    #             - !GetAtt 'TemporaryBucket.Outputs.S3BucketName'
+    #             - '/temp-dir'
+    #           InputDatabase: !GetAtt 'TransientS3CrawlerUpdates.Outputs.GlueDatabaseName'
+    #           InputTable: t_demographic_tag_cdc_update
+    #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
+    #           OutputPath: FIG_Update
+    #           TypeOfJob: plain_refined
+    #           FirstSource: FILU
+    #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
+    #   Type: AWS::CloudFormation::Stack
 
     AthenaWorkGroup:
         Type: AWS::Athena::WorkGroup
