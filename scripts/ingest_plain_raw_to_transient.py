@@ -1,6 +1,6 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
+#   Company Name:   s3 - ETL
 #   Created By:     Prahathish Kameswaran - Coda Global
 #       
 #   Description:    ETL that exports CSV Files in S3 Raw Zone to Parquet Files in Transient Zone
@@ -10,11 +10,11 @@
 #
 #    Example: 
 # # Configuration Variables - Crawler Catalog
-#   input_database = "fluent_dev_filu_db_raw_dev"
+#   input_database = "s3_dev_filu_db_raw_dev"
 #   input_table = "t_demographic"
 #
 # # Clear files in Output bucket
-#   output_bucket = "fluent-dev-datalake-transient-dev-394780878318"
+#   output_bucket = "s3-dev-datalake-transient-dev-394780878318"
 #   output_path = "FILU"
 #
 #######################################################################################################

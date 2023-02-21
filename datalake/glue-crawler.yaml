@@ -10,11 +10,11 @@
         Description: The name of the Metadata Database you want to use. It will create if doesn't exist
       CDCDatabaseName:
         Type: String
-        Default: fluent_dev_kinesis_delivery_database
+        Default: s3_dev_kinesis_delivery_database
         Description: If you're using crawler for cdc data.
       CDCTableName:
         Type: String
-        Default: fluent_dev_cdc_table
+        Default: s3_dev_cdc_table
         Description: If you're using crawler for cdc data.
       SERVICEROLEARN: 
         Type: String
@@ -38,7 +38,7 @@
         AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
         ConstraintDescription: Company name can include lowercase letters and hyphens (-). 
           It cannot start or end with a hyphen (-).
-        Default: fluent
+        Default: s3
         Description: "S3 bucket naming conventions for the company the stuff is all for"
         Type: String  
       OWNER:

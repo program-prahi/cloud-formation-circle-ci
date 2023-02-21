@@ -15,7 +15,7 @@ Parameters:
   COMPANYNAME: 
       AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
       ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
-      Default: fluent
+      Default: s3
       Description: "S3 bucket naming conventions for the company the stuff is all for"
       Type: String  
   OWNER:

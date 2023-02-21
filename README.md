@@ -1,9 +1,9 @@
-# Datalake for Fluent
+# Datalake for s3
 
 This repo will allow you completely create a data lake in S3.  It consists of a series of top level CloudFormation templates. The template `datalake.yaml` at the current level is the parent template to be run in CloudFormation.  The templates under the `./datalake/` path are components to make nested stacks. Those templates are called from the current level `datalake.yaml` templates and never directly.
 
 ## Datalake Architecture
-![](./assets/Fluent-Data-Lake-Phase-I-Architecture.png)
+![](./assets/s3-Data-Lake-Phase-I-Architecture.png)
 
 ## Datalake Infrastructure
 
@@ -196,15 +196,15 @@ Components:
 
 2.	Clone Git Repo
     1.	<Link>
-    2.	Note local location of repo. Ex: /home/user/fluent-data-lake
+    2.	Note local location of repo. Ex: /home/user/s3-data-lake
 3. Open the /home/user/parameters.json file
     1. Give required parameters information as specified in the table below:
 
 
   |Parameter Name|Description & Utilization|Allowed Values|Default Value|Required?|
   |:---:|:---:|:---:|:---:|:---:|
-  |CompanyName|S3 bucket naming conventions for the company the stuff is all for.|<Any String>|fluent|Optional|
-  |CodaS3BucketName|S3 bucket where the Quick Start templates and scripts are installed.|<Any String>|fluent-datalake-templates-dev-394780878318|Optional|
+  |CompanyName|S3 bucket naming conventions for the company the stuff is all for.|<Any String>|s3|Optional|
+  |CodaS3BucketName|S3 bucket where the Quick Start templates and scripts are installed.|<Any String>|s3-datalake-templates-dev-394780878318|Optional|
   |CodaS3KeyPrefix|S3 key prefix used to simulate a folder for your copy of Quick Start assets.|<Any String>|data-lake/|Optional|
   |ProjectName|Name of the project for tagging purposes.|<Any String>|datalake|Optional|
   |Owner|Name of the Owner of the resources for tagging purposes.|<Any String>|Jacob Puthuparambil|Optional|
@@ -220,9 +220,9 @@ Components:
   |Host|Host address of the Database| | 34.74.194.212 |Optional|
   |Port|Port of the Database| | 3306 |Optional|
   |DBName|Name of the Database| | FILU |Optional|
-  |RawInputDatabaseName|Name of the Raw Zone Database| |fluent_dev_filu_db_raw|Optional|
-  |TransientInputDatabaseName|Name of the Transient Zone Database| |fluent_dev_filu_db_transient|Optional|
-  |RefinedInputDatabaseName|Name of the Refined Zone Database| |fluent_dev_filu_db_refined|Optional|
+  |RawInputDatabaseName|Name of the Raw Zone Database| |s3_dev_filu_db_raw|Optional|
+  |TransientInputDatabaseName|Name of the Transient Zone Database| |s3_dev_filu_db_transient|Optional|
+  |RefinedInputDatabaseName|Name of the Refined Zone Database| |s3_dev_filu_db_refined|Optional|
   |EmailID|Email ID for sns to notify the glue workflow failure.| | |Required|
 
       Note:
@@ -240,7 +240,7 @@ Components:
   |DBName|FILU|
 
 6.  Create a new user with programmatic access for deploying the stacks using CircleCI. Note the Key values to store them as environment variables.
-7.  Open the CircleCI dashboard and Link the `fluent-datalake` project.  
+7.  Open the CircleCI dashboard and Link the `s3-datalake` project.  
 8.  Goto the Project Settings> Environment Variables, Add the following Environment Varibles to the project
 
   |Key|Description|

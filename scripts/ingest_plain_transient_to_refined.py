@@ -1,6 +1,6 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
+#   Company Name:   s3 - ETL
 #   Created By:     Prahathish Kameswaran - Coda Global
 #       
 #   Description:    ETL that exports Files in Transient Zone to Refined Zone
@@ -10,10 +10,10 @@
 #
 #    Example: 
 # # Configuration Variables - Crawler Catalog
-#   input_database = "fluent_dev_filu_db_transient_dev"
+#   input_database = "s3_dev_filu_db_transient_dev"
 #   input_table = "t_demographic"
-#   GLUE_ROLE = "arn:aws:iam::394780878318:role/fluent-role-glueEtlJob"  
-#   output_bucket = "fluent-dev-datalake-refined-dev-394780878318"
+#   GLUE_ROLE = "arn:aws:iam::394780878318:role/s3-role-glueEtlJob"  
+#   output_bucket = "s3-dev-datalake-refined-dev-394780878318"
 #   output_path = "FIGAudit/FIG"
 #   first_source = "FILU" 
 #

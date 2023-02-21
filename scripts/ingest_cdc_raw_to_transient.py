@@ -1,6 +1,6 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
+#   Company Name:   s3 - ETL
 #   Created By:     Prahathish Kameswaran - Coda Global
 #       
 #   Description:    ETL that exports CDC files in RawZone to TransientZone
@@ -10,9 +10,9 @@
 #
 #    Example: 
 # # Configuration Variables - Crawler Catalog
-#   input_database = "fluent_dev_kinesis_delivery_database"
-#   input_table = "fluent_dev_cdc_table"
-#   output_bucket = "fluent-dev-datalake-transient-dev-394780878318"
+#   input_database = "s3_dev_kinesis_delivery_database"
+#   input_table = "s3_dev_cdc_table"
+#   output_bucket = "s3-dev-datalake-transient-dev-394780878318"
 #   output_path = "FILU"
 #   operation = "insert"
 #

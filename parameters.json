@@ -16,7 +16,7 @@
         "ParameterKey": "ReplicationInstanceClass"
     },
     {
-        "ParameterValue": "fluent",
+        "ParameterValue": "s3",
         "ParameterKey": "COMPANYNAME"
     },
     {
@@ -40,15 +40,15 @@
         "ParameterKey": "DBName"
     },
     {
-        "ParameterValue": "fluent-datalake-templates-dev-394780878318",
+        "ParameterValue": "s3-datalake-templates-dev-394780878318",
         "ParameterKey": "CodaS3BucketName"
     },
     {
-        "ParameterValue": "fluent_filu_db_raw",
+        "ParameterValue": "s3_filu_db_raw",
         "ParameterKey": "RawInputDatabaseName"
     },
     {
-        "ParameterValue": "fluent_filu_db_transient",
+        "ParameterValue": "s3_filu_db_transient",
         "ParameterKey": "TransientInputDatabaseName"
     },
     {
@@ -81,6 +81,6 @@
     },
     {
         "ParameterKey": "RefinedInputDatabaseName",
-        "ParameterValue": "fluent_filu_db_refined"
+        "ParameterValue": "s3_filu_db_refined"
     }
 ]

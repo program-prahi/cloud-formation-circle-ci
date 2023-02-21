@@ -11,7 +11,7 @@ Parameters:
     COMPANYNAME: 
         AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
         ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
-        Default: fluent
+        Default: s3
         Description: 'Naming conventions for the company '
         Type: String  
     OWNER:
@@ -48,7 +48,7 @@ Parameters:
 Resources: 
     ReplicationSubnetGroup: 
         Properties: 
-            ReplicationSubnetGroupDescription: ReplicationSubnetGroup for fluent dms
+            ReplicationSubnetGroupDescription: ReplicationSubnetGroup for s3 dms
             ReplicationSubnetGroupIdentifier: !Sub '${ProjectName}-${ENVIRONMENT}-ReplicationSubnetGroup'
             SubnetIds: 
                 - !Ref PublicSubnet1Id

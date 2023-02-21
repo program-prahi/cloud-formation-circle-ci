@@ -1,7 +1,7 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
-#   Created By:     Prahathish Kameswaran - Coda Global
+#   Company Name:   s3 - ETL
+#   Created By:     Prahathish Kameswaran
 #       
 #   Description:    ETL Job that creates Customer views out of Fuzzy-match Deduped Tables, Demographic and Base Id
 #
@@ -10,11 +10,11 @@
 #
 #    Example: 
 # # Configuration Variables - Crawler Catalog
-#   fuzzy_match_database = "fluent_dev_filu_db_transient_dev"
+#   fuzzy_match_database = "s3_dev_filu_db_transient_dev"
 #   fuzzy_match_table = "customer_data_10_email_deduped_run_2_output"
-#   refined_database = "fluent_dev_filu_db_refined_dev"
-#   GLUE_ROLE = "arn:aws:iam::394780878318:role/fluent-role-glueEtlJob"  
-#   output_bucket = "fluent-dev-datalake-refined-dev-394780878318"
+#   refined_database = "s3_dev_filu_db_refined_dev"
+#   GLUE_ROLE = "arn:aws:iam::394780878318:role/s3-role-glueEtlJob"  
+#   output_bucket = "s3-dev-datalake-refined-dev-394780878318"
 #   output_path = "FIGAudit/FIG"
 #   first_source = "FILU" 
 #
@@ -35,9 +35,9 @@ spark = glueContext.spark_session
 logger = glueContext.get_logger()
 job = Job(glueContext)
 
-# fuzzy_match_database = "fluent_dev_filu_db_transient_dev"
+# fuzzy_match_database = "s3_dev_filu_db_transient_dev"
 # fuzzy_match_table = "customer_data_10_email_deduped_run_2_output"
-# refined_database_name = "fluent_dev_filu_db_refined_dev"
+# refined_database_name = "s3_dev_filu_db_refined_dev"
 demographic_table = "fig_t_demographic"
 baseid_table = "fig_t_baseid"
 

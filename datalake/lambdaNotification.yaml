@@ -9,7 +9,7 @@ Parameters:
   COMPANYNAME: 
       AllowedPattern: ^[a-z]+([a-z-]*[a-z])*$
       ConstraintDescription: Company name can include lowercase letters and hyphens (-). It cannot start or end with a hyphen (-).
-      Default: fluent
+      Default: s3
       Description: "S3 bucket naming conventions for the company the stuff is all for"
       Type: String  
   OWNER:
@@ -30,7 +30,7 @@ Parameters:
   SNSTopic:
     Type: String    
   CodaS3BucketName:
-    Default: fluent-datalake-templates-dev-394780878318
+    Default: s3-datalake-templates-dev-394780878318
     Description: "S3 bucket where the Quick Start templates and scripts are installed.\
       \ Use this parameter to specify the S3 bucket name you\u2019ve created for your\
       \ copy of Quick Start assets, if you decide to customize or extend the Quick\

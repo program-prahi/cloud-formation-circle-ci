@@ -1,7 +1,7 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
-#   Created By:     Hariharan Krishnamurthi - Coda Global
+#   Company Name:   s3 - ETL
+#   Created By:     Prahathish Kameswaran
 #       
 #   Description:    Sends a SNS Notification that there is a Failure in Workflow operation
 #

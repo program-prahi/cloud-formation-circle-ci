@@ -1,6 +1,6 @@
 ######################################################################################################
 #
-#   Company Name:   Fluent - ETL
+#   Company Name:   s3 - ETL
 #   Created By:     Hariharan Krishnamurthi - Coda Global
 #       
 #   Description:    Starts the Transient to Refined Workflow on a successful cdc-workflow condition
