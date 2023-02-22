@@ -1,7 +1,7 @@
 ######################################################################################################
 #
 #   Company Name:   s3 - ETL
-#   Created By:     Prahathish Kameswaran - Coda Global
+#   Created By:     Prahathish Kameswaran
 #       
 #   Description:    ETL that exports CDC files in RawZone to TransientZone
 #
@@ -13,7 +13,7 @@
 #   input_database = "s3_dev_kinesis_delivery_database"
 #   input_table = "s3_dev_cdc_table"
 #   output_bucket = "s3-dev-datalake-transient-dev-394780878318"
-#   output_path = "FILU"
+#   output_path = "db_name"
 #   operation = "insert"
 #
 #######################################################################################################
@@ -113,7 +113,7 @@ else:
     table_list  = spark.sql(table_occurence_query).select("table_name").rdd.flatMap(lambda r: r).collect()
     logger.info('Delta (CDC) Tables List' + str(table_list))
 
-    ## Schemas of Tables for FILU Database: ##  Add Additional Table Schemas here
+    ## Schemas of Tables for db_name Database: ##  Add Additional Table Schemas here
     tableSchemaMappings = {
         "T_BaseID": StructType([StructField("bid",LongType(),True),StructField("emailcrc",LongType(),True),StructField("emailmd5",StringType(),True), \
                                     StructField("shade",LongType(),True),StructField("email",StringType(),True)]),

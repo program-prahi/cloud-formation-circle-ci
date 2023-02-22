@@ -54,7 +54,7 @@ Resources:
                           "rule-id": "1",
                           "rule-name": "1",
                           "object-locator": {
-                              "schema-name": "FILU",
+                              "schema-name": "db_name",
                               "table-name": "%"
                           },
                           "rule-action": "include"
@@ -110,7 +110,7 @@ Resources:
                                 "rule-id": "1",
                                 "rule-name": "1",
                                 "object-locator": {
-                                    "schema-name": "FILU",
+                                    "schema-name": "db_name",
                                     "table-name": "%"
                                 },
                                 "rule-action": "include"

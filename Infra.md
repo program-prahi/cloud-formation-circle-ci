@@ -215,12 +215,12 @@ Components:
   |Username|Username of the Database| |awsdatalake|Optional|
   |Password|Password of the Database| | |Required|
   |Engine|Engine type of the Database| | mysql |Optional|
-  |Host|Host address of the Database| | 34.74.194.212 |Optional|
+  |Host|Host address of the Database| | xx.xx.xx.xxx |Optional|
   |Port|Port of the Database| | 3306 |Optional|
-  |DBName|Name of the Database| | FILU |Optional|
-  |RawInputDatabaseName|Name of the Raw Zone Database| |s3_dev_filu_db_raw|Optional|
-  |TransientInputDatabaseName|Name of the Transient Zone Database| |s3_dev_filu_db_transient|Optional|
-  |RefinedInputDatabaseName|Name of the Refined Zone Database| |s3_dev_filu_db_refined|Optional|
+  |DBName|Name of the Database| | db_name |Optional|
+  |RawInputDatabaseName|Name of the Raw Zone Database| |s3_dev_db_name_db_raw|Optional|
+  |TransientInputDatabaseName|Name of the Transient Zone Database| |s3_dev_db_name_db_transient|Optional|
+  |RefinedInputDatabaseName|Name of the Refined Zone Database| |s3_dev_db_name_db_refined|Optional|
   |EmailID|Email ID for sns to notify the glue workflow failure.| | |Required|
 
       Note:
@@ -234,8 +234,8 @@ Components:
   |:---:|:---:|
   |Username|awsdatalake|
   |Password||
-  |Host|34.74.194.212|
-  |DBName|FILU|
+  |Host|xx.xx.xx.xxx|
+  |DBName|db_name|
 
 6.  Create a new user with programmatic access for deploying the stacks using CircleCI. Note the Key values to store them as environment variables.
 7.  Open the CircleCI dashboard and Link the `s3-datalake` project.  

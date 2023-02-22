@@ -86,7 +86,7 @@ Parameters:
       Host:
           Type: String
           Description: Host IP of the Database
-          Default: 34.74.194.212
+          Default: xx.xx.xx.xxx
       Port:
           Type: String
           Description: Port number of the Database
@@ -94,19 +94,19 @@ Parameters:
       DBName: 
           Type: String
           Description: Name of the Database
-          Default: FILU
+          Default: db_name
       RawInputDatabaseName: 
           Type: String
           Description: The database name for the input of the job
-          Default: s3_dev_filu_db_raw
+          Default: s3_dev_db_name_db_raw
       TransientInputDatabaseName: 
           Type: String
           Description: The database name for the input of the job
-          Default: s3_dev_filu_db_transient
+          Default: s3_dev_db_name_db_transient
       RefinedInputDatabaseName: 
           Type: String
           Description: The database name for the input of the job
-          Default: s3_dev_filu_db_refined
+          Default: s3_dev_db_name_db_refined
       EmailID:
         Type: String
         Description: Email ID for sns to notify the glue workflow failure.
@@ -348,7 +348,7 @@ Resources:
                 - ''
                 - - 's3://'
                   - !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                  - '/FILU/'
+                  - '/db_name/'
               TypeofZone: transient
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
       Type: AWS::CloudFormation::Stack
@@ -368,7 +368,7 @@ Resources:
     #             - ''
     #             - - 's3://'
     #               - !GetAtt 'TransientBucket.Outputs.S3BucketName'
-    #               - '/FILU_Update/'
+    #               - '/db_name_Update/'
     #           TypeofZone: transient
     #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-crawler.yaml'
     #   Type: AWS::CloudFormation::Stack
@@ -452,7 +452,7 @@ Resources:
               InputDatabase: !GetAtt 'KinesisFirehose.Outputs.DBName'
               InputTable: !GetAtt 'KinesisFirehose.Outputs.TableName'
               OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-              OutputPath: FILU
+              OutputPath: db_name
               TypeOfJob: cdc
               TypeOfOperation: insert
               WorkerType: Standard
@@ -483,7 +483,7 @@ Resources:
     #           InputDatabase: !GetAtt 'KinesisFirehose.Outputs.DBName'
     #           InputTable: !GetAtt 'KinesisFirehose.Outputs.TableName'
     #           OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-    #           OutputPath: FILU_Update
+    #           OutputPath: db_name_Update
     #           TypeOfJob: cdc
     #           TypeOfOperation: update
     #           WorkerType: Standard
@@ -514,7 +514,7 @@ Resources:
               InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
               InputTable: t_demographic_survey
               OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-              OutputPath: FILU
+              OutputPath: db_name
               WorkerType: G.1X
               DpuCount: 50
           TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -542,7 +542,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_tag_value
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tdemographicsurveyvalueGlueJob: 
@@ -568,7 +568,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_survey_value
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tdemographicsurveyattributeGlueJob: 
@@ -594,7 +594,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_survey_attribute
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tdemographictagattributeGlueJob: 
@@ -620,7 +620,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_tag_attribute
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
                 WorkerType: Standard
                 DpuCount: 10                
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -648,7 +648,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_visited_affiliate
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
                 WorkerType: G.1X
                 DpuCount: 50                
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -676,7 +676,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tdemographictagGlueJob: 
@@ -702,7 +702,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_tag
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tbaseidGlueJob: 
@@ -728,7 +728,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_baseid
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
     tsubscribedofferGlueJob: 
@@ -754,7 +754,7 @@ Resources:
                 InputDatabase: !GetAtt 'RawS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_subscribed_offer
                 OutputBucket: !GetAtt 'TransientBucket.Outputs.S3BucketName'
-                OutputPath: FILU
+                OutputPath: db_name
                 WorkerType: G.1X
                 DpuCount: 50                
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -1313,7 +1313,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
 
@@ -1342,7 +1342,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
 
@@ -1371,7 +1371,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
                 WorkerType: G.1X
                 DpuCount: 50
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -1402,7 +1402,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
 
@@ -1431,7 +1431,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
    
@@ -1460,7 +1460,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
         Type: AWS::CloudFormation::Stack
 
@@ -1489,7 +1489,7 @@ Resources:
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
                 WorkerType: Standard
                 DpuCount: 10                 
             TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
@@ -1518,7 +1518,7 @@ Resources:
                 InputDatabase: !GetAtt 'TransientS3Crawler.Outputs.GlueDatabaseName'
                 InputTable: t_demographic_tag_value
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
-                FirstSource: FILU
+                FirstSource: db_name
                 TypeOfJob: plain_refined
                 OutputPath: FIGAudit/FIG
                 WorkerType: Standard
@@ -1550,7 +1550,7 @@ Resources:
                 InputTable: t_subscribed_offer
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 TypeOfJob: plain_refined
-                FirstSource: FILU
+                FirstSource: db_name
                 OutputPath: FIGAudit/FIG
                 WorkerType: G.1X
                 DpuCount: 50                     
@@ -1581,7 +1581,7 @@ Resources:
                 InputTable: t_visited_affiliate
                 OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
                 OutputPath: FIGAudit/FIG
-                FirstSource: FILU
+                FirstSource: db_name
                 TypeOfJob: plain_refined
                 WorkerType: G.1X
                 DpuCount: 50                
@@ -1612,7 +1612,7 @@ Resources:
     #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
     #           OutputPath: FIG_Update
     #           TypeOfJob: plain_refined
-    #           FirstSource: FILU
+    #           FirstSource: db_name
     #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
     #   Type: AWS::CloudFormation::Stack
     # tdemographicupdatesGlueJob: 
@@ -1640,7 +1640,7 @@ Resources:
     #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
     #           OutputPath: FIG_Update
     #           TypeOfJob: plain_refined
-    #           FirstSource: FILU
+    #           FirstSource: db_name
     #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
     #   Type: AWS::CloudFormation::Stack
     # tdemographictagupdatesGlueJob: 
@@ -1668,7 +1668,7 @@ Resources:
     #           OutputBucket: !GetAtt 'BucketsRefined.Outputs.S3BucketName'
     #           OutputPath: FIG_Update
     #           TypeOfJob: plain_refined
-    #           FirstSource: FILU
+    #           FirstSource: db_name
     #       TemplateURL: !Sub 'https://${CodaS3BucketName}.s3.amazonaws.com/${CodaS3KeyPrefix}glue-job.yaml'
     #   Type: AWS::CloudFormation::Stack
 

@@ -1,7 +1,7 @@
 ######################################################################################################
 #
 #   Company Name:   s3 - ETL
-#   Created By:     Prahathish Kameswaran - Coda Global
+#   Created By:     Prahathish Kameswaran
 #       
 #   Description:    ETL that exports Files in Transient Zone to Refined Zone
 #
@@ -10,12 +10,12 @@
 #
 #    Example: 
 # # Configuration Variables - Crawler Catalog
-#   input_database = "s3_dev_filu_db_transient_dev"
+#   input_database = "s3_dev_db_name_db_transient_dev"
 #   input_table = "t_demographic"
 #   GLUE_ROLE = "arn:aws:iam::394780878318:role/s3-role-glueEtlJob"  
 #   output_bucket = "s3-dev-datalake-refined-dev-394780878318"
 #   output_path = "FIGAudit/FIG"
-#   first_source = "FILU" 
+#   first_source = "db_name" 
 #
 #######################################################################################################
 
@@ -94,7 +94,7 @@ else:
 # created_date : Date
 # create_timestamp: timestamp (UTC)
 # create_user: string (IAM User created the table)
-# first_source: string (Data Source-'FILU')
+# first_source: string (Data Source-'db_name')
 # create_year: integer (Partioned)
 # create_month: integer (Partioned)
 # create_date: integer (Partitioned)
